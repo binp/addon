@@ -1,7 +1,7 @@
 import { meet } from '@googleworkspace/meet-addons/meet.addons';
 
 const CLOUD_PROJECT_NUMBER = '543831210338';
-const MAIN_STAGE_URL = 'https://github.com/binp/addon/raw/refs/heads/a1/MainStage.html';
+const MAIN_STAGE_URL = 'https://raw.githubusercontent.com/binp/addon/refs/heads/a1/MainStage.html';
 
 /**
  * Prepares the add-on Side Panel Client, and adds an event to launch the
