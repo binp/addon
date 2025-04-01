@@ -1,3 +1,4 @@
+<!--
 <html>
 <head>
     <title>Meet add-on Side Panel</title>
@@ -15,5 +16,27 @@
             helloWorld.setUpAddon();
         };
     </script>
+</body>
+</html>
+-->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add-on Sidepanel</title>
+    <style>
+        body { font-family: sans-serif; padding: 10px; }
+        ul { list-style: none; padding: 0; }
+        li { margin-bottom: 5px; padding: 5px; background-color: #f0f0f0; }
+        #status { margin-bottom: 10px; font-style: italic; }
+    </style>
+</head>
+<body>
+    <h3>Add-on Content</h3>
+    <div id="status">Initializing...</div>
+    <ul id="string-list">
+        </ul>
+
+    <script src="addon-script.js"></script>
 </body>
 </html>
