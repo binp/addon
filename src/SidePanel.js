@@ -41,60 +41,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   
     // --- Meet Add-on SDK Initialization ---
-    if (window.MeetAddon) {
-      try {
-        const sdk = window.meet.addon.MeetAddon.register();
-        console.log('Meet Add-on SDK Registered successfully.');
-  
-        sdk.onLoad(payload => {
-          console.log('Addon loaded callback. Payload:', payload);
-          // Send the 'addonOpened' message to the parent (content script)
-          // The target origin MUST be the Meet window origin
-          const meetOrigin = 'https://meet.google.com';
-          console.log("Addon sending 'addonOpened' message to target:", meetOrigin);
-          try {
-              window.parent.postMessage({ type: 'addonOpened' }, meetOrigin);
-              updateStatus('Connecting to extension...');
-          } catch (e) {
-              console.error("Error sending addonOpened message:", e);
-              displayError("Failed to communicate with Meet page.");
-              updateStatus("Initialization Error");
-          }
-        });
-  
-        // Add other SDK event listeners if needed
-        // sdk.onMeetingInfoChanged(...)
-  
-      } catch (error) {
-          console.error('Error registering Meet Add-on SDK:', error);
-          displayError('Failed to initialize Meet Add-on SDK.');
-          updateStatus('SDK Error');
-          // Fallback attempt to notify opener even if SDK init fails
-          try {
-              const meetOrigin = 'https://meet.google.com';
-              console.warn("SDK failed, trying to send 'addonOpened' anyway to:", meetOrigin);
-              window.parent.postMessage({ type: 'addonOpened' }, meetOrigin);
-              updateStatus('Connecting to extension (SDK failed)...');
-          } catch (e) {
-               console.error("Error sending addonOpened message after SDK failure:", e);
-          }
-      }
-    } else {
-        console.error('Meet Add-on SDK not found!');
-        displayError('Meet Add-on SDK script failed to load.');
-        updateStatus('SDK Load Error');
-         // Fallback attempt to notify opener even if SDK script missing
-         try {
-              const meetOrigin = 'https://meet.google.com';
-              console.warn("SDK missing, trying to send 'addonOpened' anyway to:", meetOrigin);
-              window.parent.postMessage({ type: 'addonOpened' }, meetOrigin);
-              updateStatus('Connecting to extension (SDK missing)...');
-         } catch (e) {
-              console.error("Error sending addonOpened message with SDK missing:", e);
-         }
+    const meetOrigin = 'https://meet.google.com';
+    console.log("Addon sending 'addonOpened' message to target:", meetOrigin);
+    try {
+        window.parent.postMessage({ type: 'addonOpened' }, meetOrigin);
+        updateStatus('Connecting to extension...');
+    } catch (e) {
+        console.error("Error sending addonOpened message:", e);
+        displayError("Failed to communicate with Meet page.");
+        updateStatus("Initialization Error");
     }
-  
-  
+
+
     // --- postMessage Communication Logic ---
   
     function handleMessage(event) {
