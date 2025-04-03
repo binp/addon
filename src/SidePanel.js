@@ -41,9 +41,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   
     // --- Meet Add-on SDK Initialization ---
-    if (window.MeetAddon) {
+    // if (window.MeetAddon) {
+    if (window.meet.addon.MeetAddon) {
       try {
-        const sdk = window.MeetAddon.register();
+        const sdk = window.meet.addon.MeetAddon.register();
         console.log('Meet Add-on SDK Registered successfully.');
   
         sdk.onLoad(payload => {
