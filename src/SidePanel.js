@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   
     // --- Meet Add-on SDK Initialization ---
-    const meetOrigin = 'https://binp.github.io';
+    const meetOrigin = 'https://meet.google.com';
     console.log("Addon sending 'addonOpened' message to target:", meetOrigin);
     try {
         window.postMessage({ type: 'addonOpened' }, meetOrigin);
@@ -77,6 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const expectedOrigin = 'https://meet.google.com';
       if (event.origin !== expectedOrigin) {
           console.warn(`Ignoring message from unexpected origin: ${event.origin}. Expected '${expectedOrigin}'`);
+          console.log("Received event.data: ", event.data)
           return; // Stop processing if origin doesn't match
       }
   
