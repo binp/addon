@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const meetOrigin = 'https://meet.google.com';
     console.log("Addon sending 'addonOpened' message to target:", meetOrigin);
     try {
-        window.parent.postMessage({ type: 'addonOpened' }, meetOrigin);
+        window.postMessage({ type: 'addonOpened' }, meetOrigin);
         updateStatus('Connecting to extension...');
     } catch (e) {
         console.error("Error sending addonOpened message:", e);
