@@ -19,6 +19,7 @@ export async function setUpAddon() {
 // Wait for the DOM to be fully loaded before running script
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM Loaded. Initializing Addon (Externally Hosted).');
+    console.log('window.name: ', window.name, 'document.name: ', document.name);
   
     // Get references to DOM elements
     const processListElement = document.getElementById('process-list');
