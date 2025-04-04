@@ -1,28 +1,19 @@
 // SidePanel.js
 
-// Initialize the side panel client
-const sidePanelClient = new window.MeetAddonClient({
-  frame: window.parent,
-});
+import { meet } from '@googleworkspace/meet-addons/meet.addons';
 
-sidePanelClient.initialize().then(() => {
-  console.log("Side panel initialized.");
+const CLOUD_PROJECT_NUMBER = '331777483172';
 
-  // Example: Add a click listener to the button
-  const button = document.getElementById('myButton');
-  if (button) {
-    button.addEventListener('click', () => {
-      console.log('Button clicked!');
-      // Add your add-on logic here
-      alert('Button clicked!');
+/**
+ * Prepares the add-on Side Panel Client, and adds an event to launch the
+ * activity in the main stage when the main button is clicked.
+ */
+export async function setUpAddon() {
+    const session = await meet.addon.createAddonSession({
+        cloudProjectNumber: CLOUD_PROJECT_NUMBER,
     });
-  }
-
-  // You can add other logic here, such as:
-  // - Interacting with the Meet UI (if needed, though this is less common in side-panel-only add-ons)
-  // - Communicating with a backend service (as shown in a previous example)
-  // - Managing user input and displaying information
-});
+    const sidePanelClient = await session.createSidePanelClient();
+}
 
 // // Wait for the DOM to be fully loaded before running script
 // document.addEventListener('DOMContentLoaded', () => {
