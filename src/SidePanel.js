@@ -13,6 +13,7 @@ export async function setUpAddon() {
         cloudProjectNumber: CLOUD_PROJECT_NUMBER,
     });
     const sidePanelClient = await session.createSidePanelClient();
+    console.log("setUpAddon is called now.");
 }
 
 // // Wait for the DOM to be fully loaded before running script
