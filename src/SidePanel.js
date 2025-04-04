@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   
     // --- Meet Add-on SDK Initialization ---
-    const meetOrigin = 'https://meet.google.com';
+    const meetOrigin = 'https://binp.github.io';
     console.log("Addon sending 'addonOpened' message to target:", meetOrigin);
     try {
         window.postMessage({ type: 'addonOpened' }, meetOrigin);
