@@ -1,11 +1,9 @@
 // SidePanel.js
 
-import {
-  meet,
-  CoDoingState,
-} from '@googleworkspace/meet-addons/meet.addons';
+import { meet } from '@googleworkspace/meet-addons/meet.addons';
 
 const CLOUD_PROJECT_NUMBER = '331777483172';
+const SERVER_URL = 'https://script.google.com/macros/s/AKfycbywU92GLCsou63SWeD6SO5cMtk9un1JJ5bISqgEhYD4sSRBws3rwNOCNyuEwSi6yX6o/exec';
 
 document.addEventListener('DOMContentLoaded', () => {
   console.log('DOM Loaded. Initializing Addon with Role Selection (npm package).');
@@ -25,7 +23,6 @@ document.addEventListener('DOMContentLoaded', () => {
   let roleSelected = false;
   let session = null;
   let sidePanelClient = null;
-  let coDoingClient = null;
   const guestProcessData = {};
 
   // --- Helper Functions (updateStatus, displayError, updateHostProcessList - same as before) ---
@@ -37,17 +34,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (sidePanelClient == null) {
       sidePanelClient = await session.createSidePanelClient();
-    }
-    if (coDoingClient == null) {
-      coDoingClient = await session.createCoDoingClient({
-        activityTitle: "Proctor Monitoring",
-        onCoDoingStateChanged(coDoingState) {
-          guestProcessData = JSON.parse(new TextDecoder().decode(coDoingState.bytes));
-          // Update the guestProcessInfo on the sidePanel for host mode only.
-          console.log("Recevied the guest process information: ", guestProcessData);
-          updateHostProcessList();
-        },
-      });
     }
   }
 
@@ -94,8 +80,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- Mode Initialization (Called AFTER role selection) ---
   async function startSelectedMode(chosenIsHost) {
-    if (roleSelected || !coDoingClient) {
-      console.warn("Role already selected or SDK not ready.");
+    if (roleSelected) {
+      console.warn("Role already selected; no need to run this again.");
       return;
     }
     roleSelected = true;
@@ -108,18 +94,54 @@ document.addEventListener('DOMContentLoaded', () => {
 
     updateStatus('Initializing codoing session...');
     try {
-      console.log('Starting/Joining collaboration...');
+      console.log('Make sure the sidePanelClient has initialized...');
       // Use the stored sdkInstance from registerSdk()
-      if (coDoingClient == null) {
+      if (!sidePanelClient) {
+        console.log("The addon session and side panel has not been initialed. doing now...")
         await setUpAddon();
       }
-      console.log('Collaboration started/joined.');
+      console.log('The side panel has started/joined.');
       updateStatus(isHost ? 'Host mode listening.' : 'Guest mode ready to send.');
 
       if (isHost) {
         // HOST: Listen for broadcasts
-        // TODO: please use coDoingClinet API.
-        updateHostProcessList(); // Initial render
+        // Inside Host logic in startSelectedMode, after setting isHost=true
+        let pollIntervalId = null;
+
+        function fetchGuestData() {
+            console.log('Host fetching data...');
+            fetch(SERVER_URL, {
+                method: 'GET',
+                mode: 'cors',
+                cache: 'no-cache'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Host received data:', data.data);
+                    // Clear existing data and repopulate (simpler than merging)
+                    // Or implement merging logic if needed
+                    Object.keys(guestProcessData).forEach(key => delete guestProcessData[key]); // Clear old
+                    Object.assign(guestProcessData, data.data || {}); // Assign new data
+                    updateHostProcessList(); // Update UI
+                    updateStatus(`Host mode listening. Last fetch: ${new Date().toLocaleTimeString()}`);
+                } else {
+                    console.error('Server returned error on GET:', data.error);
+                    displayError(`Server error fetching data: ${data.error}`);
+                    updateStatus('Server Error (GET)');
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching data from server:', error);
+                displayError(`Network error fetching data: ${error.message}`);
+                updateStatus('Network Error (GET)');
+            });
+        }
+
+        // Start polling
+        fetchGuestData(); // Fetch immediately
+        pollIntervalId = setInterval(fetchGuestData, 15000); // Fetch every 15 seconds (adjust interval as needed)
+
       } else {
         // GUEST: Send 'addonOpened' message to the window.top.
          const meetOrigin = 'https://meet.google.com';
@@ -152,26 +174,63 @@ document.addEventListener('DOMContentLoaded', () => {
       guestStatusDetail.textContent = `Sending process info (${message.data?.length || 0})...`;
       displayError(null);
 
-      if (collaboration) {
-        // Use cod-doing API instead of collaboration.
-        // In the guest mode, this will call coDoingClient.broadcastStateUpdate(bytes).
-        const broadcastPayload = { type: 'processUpdate', processes: message.data || [] };
-        collaboration.broadcast(broadcastPayload).then(() => {
-          console.log('Process info broadcasted successfully.');
-          updateStatus(`Process info sent (${broadcastPayload.processes.length}).`);
-          guestStatusDetail.textContent = `Process info sent (${broadcastPayload.processes.length}). Waiting for next update...`;
-        }).catch(err => {
-          console.error('Error broadcasting process info:', err);
-          displayError(`Failed to send process info: ${err.message || err}`);
-          updateStatus('Broadcast Error');
-          guestStatusDetail.textContent = 'Error sending process info.';
-        });
-      } else {
-        console.warn('Cannot broadcast: Collaboration session not ready.');
-        displayError('Collaboration session not active. Cannot send data.');
-        updateStatus('Collaboration Error');
-        guestStatusDetail.textContent = 'Collaboration session not active.';
-      }
+      // Send the process message to HTTP server.
+      // Inside Guest logic, when processes are received from extension
+      const payload = {
+        userId: ownUserInfo?.userSessionId || 'unknown_guest', // Get actual user ID from SDK
+        userName: ownUserInfo?.displayName || 'Unknown Guest', // Get actual name from SDK
+        processes: message.data || [] // Assuming message.data has the process list
+      };
+
+      fetch(SERVER_URL, {
+        method: 'POST',
+        mode: 'cors', // Required for cross-origin requests
+        cache: 'no-cache',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        // Use redirect: 'follow' if needed, but Apps Script usually doesn't redirect POSTs
+        body: JSON.stringify(payload)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+            console.log('Successfully POSTed data to server:', data);
+            updateStatus(`Process info sent (${payload.processes.length}).`);
+            guestStatusDetail.textContent = `Process info sent (${payload.processes.length}). Waiting for next update...`;
+        } else {
+            console.error('Server returned error:', data.error);
+            displayError(`Server error: ${data.error}`);
+            updateStatus('Server Error (POST)');
+        }
+      })
+      .catch(error => {
+        console.error('Error POSTing data to server:', error);
+        displayError(`Network error sending data: ${error.message}`);
+        updateStatus('Network Error (POST)');
+        guestStatusDetail.textContent = 'Error sending process info.';
+      });
+
+      // if (collaboration) {
+      //   // Use cod-doing API instead of collaboration.
+      //   // In the guest mode, this will call coDoingClient.broadcastStateUpdate(bytes).
+      //   const broadcastPayload = { type: 'processUpdate', processes: message.data || [] };
+      //   collaboration.broadcast(broadcastPayload).then(() => {
+      //     console.log('Process info broadcasted successfully.');
+      //     updateStatus(`Process info sent (${broadcastPayload.processes.length}).`);
+      //     guestStatusDetail.textContent = `Process info sent (${broadcastPayload.processes.length}). Waiting for next update...`;
+      //   }).catch(err => {
+      //     console.error('Error broadcasting process info:', err);
+      //     displayError(`Failed to send process info: ${err.message || err}`);
+      //     updateStatus('Broadcast Error');
+      //     guestStatusDetail.textContent = 'Error sending process info.';
+      //   });
+      // } else {
+      //   console.warn('Cannot broadcast: Collaboration session not ready.');
+      //   displayError('Collaboration session not active. Cannot send data.');
+      //   updateStatus('Collaboration Error');
+      //   guestStatusDetail.textContent = 'Collaboration session not active.';
+      // }
     } else if (!isHost && roleSelected && (message?.type === 'daemonError' || message?.type === 'daemonDisconnected')) {
        console.warn('Received daemon status from extension:', message.type, message.data);
        displayError(`Extension reported: ${message.type} ${message.data || ''}`);
@@ -185,7 +244,12 @@ document.addEventListener('DOMContentLoaded', () => {
   guestButton.addEventListener('click', () => startSelectedMode(false));
   window.addEventListener('message', handleMessage);
   setUpAddon(); // Complete the set up of the addon and create session, sidePanelClient and coDoingClient.
-  window.addEventListener('unload', () => { /* ... cleanup ... */ });
+  // window.addEventListener('unload', () => { /* ... cleanup ... */ });
+  // Remember to clear the interval on unload or if mode changes
+  window.addEventListener('unload', () => {
+    if (pollIntervalId) clearInterval(pollIntervalId);
+  });
+
 
 }); // End DOMContentLoaded listener
 
