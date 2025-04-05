@@ -6,13 +6,6 @@ import {
 } from '@googleworkspace/meet-addons/meet.addons';
 
 const CLOUD_PROJECT_NUMBER = '331777483172';
-let addOnSession = null;
-let sidePanelClient = null;
-let coDoingClient = null;
-
-
-
-
 
 document.addEventListener('DOMContentLoaded', () => {
   console.log('DOM Loaded. Initializing Addon with Role Selection (npm package).');
