@@ -1,61 +1,85 @@
 /* SidePanel.css */
 body {
-    font-family: sans-serif;
-    margin: 0;
-    padding: 10px;
-    font-size: 14px;
-    background-color: #f8f9fa;
-    color: #202124;
-  }
-  
-  .container {
-    padding: 5px;
-  }
-  
-  h4 {
-    margin-top: 0;
-    margin-bottom: 10px;
-    font-weight: 500;
-    color: #3c4043;
-  }
-  
-  #process-list {
-    list-style-type: none;
-    padding: 0;
-    margin-bottom: 15px;
-    max-height: 300px;
-    overflow-y: auto;
-    border: 1px solid #dadce0;
-    border-radius: 4px;
-    background-color: #ffffff;
-  }
-  
-  #process-list li {
-    margin: 0;
-    padding: 8px 10px;
-    font-size: 0.9em;
-    word-wrap: break-word;
-    border-bottom: 1px solid #e8eaed;
-  }
-   #process-list li:last-child {
-       border-bottom: none;
-   }
-  
-  
-  #status {
-    margin-top: 15px;
-    font-style: italic;
-    color: #5f6368;
-    font-size: 0.9em;
-  }
-  
-  .error-message {
-    color: #d93025;
-    font-weight: bold;
-    margin-top: 10px;
-    margin-bottom: 10px;
-    padding: 8px;
-    background-color: #fce8e6;
-    border: 1px solid #f4c7c3;
-    border-radius: 4px;
-  }
+  font-family: sans-serif;
+  margin: 0;
+  padding: 10px;
+  font-size: 14px;
+  background-color: #f8f9fa;
+  color: #202124;
+}
+
+.container {
+  padding: 5px;
+}
+
+h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-weight: 500;
+  color: #3c4043;
+}
+
+#process-list {
+  list-style-type: none;
+  padding: 0;
+  margin-bottom: 15px;
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  background-color: #ffffff;
+}
+
+#process-list li {
+  margin: 0;
+  padding: 8px 10px;
+  font-size: 0.9em;
+  word-wrap: break-word;
+  border-bottom: 1px solid #e8eaed;
+}
+ #process-list li:last-child {
+     border-bottom: none;
+ }
+ #process-list li b { /* Style guest name */
+    color: #1a73e8; /* Google blue */
+ }
+ #process-list li i { /* Style placeholder text */
+     color: #5f6368;
+ }
+
+
+#status {
+  margin-top: 15px;
+  font-style: italic;
+  color: #5f6368;
+  font-size: 0.9em;
+}
+
+.error-message {
+  color: #d93025;
+  font-weight: bold;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  padding: 8px;
+  background-color: #fce8e6;
+  border: 1px solid #f4c7c3;
+  border-radius: 4px;
+}
+
+/* --- Host/Guest Mode Styling --- */
+
+/* By default, hide mode-specific sections */
+.host-only,
+.guest-only {
+  display: none;
+}
+
+/* Show host section only when body has 'host-mode' class */
+body.host-mode .host-only {
+  display: block;
+}
+
+/* Show guest section only when body has 'guest-mode' class */
+body.guest-mode .guest-only {
+  display: block;
+}

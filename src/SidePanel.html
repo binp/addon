@@ -1,26 +1,38 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <base target="_top"> <meta charset="UTF-8" />
+  <base target="_top">
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="SidePanel.css">
-  <script src="dist/main.js"></script>
+  <script src="dist/main.js" defer></script>
   <title>Proctor Addon</title>
 </head>
 <body>
-  <div>This is the add-on Side Panel. Only you can see this.</div>
-  <script>
-     document.body.onload = () => {
-         helloWorld.setUpAddon();
-     };
-  </script>
   <div class="container">
-    <h4>Processes containing "Cursor":</h4>
-    <ul id="process-list">
-      <li>Waiting for data...</li>
-    </ul>
-    <div id="status">Initializing...</div>
+    <!--This will create the addon session. Otherwise, the sidaPanel will hanging on.-->
+ 
+    <div id="role-selection">
+        <h4>Select Your Role:</h4>
+        <button id="host-button" class="role-button">Run as Host</button>
+        <button id="guest-button" class="role-button">Run as Guest</button>
+    </div>
+
+    <div id="status">Please select your role above.</div>
     <div id="error-message" class="error-message" style="display: none;"></div>
+
+    <div class="host-only content-section">
+      <h4>Guest Process Information:</h4>
+      <ul id="process-list">
+        </ul>
+    </div>
+
+    <div class="guest-only content-section">
+      <h4>Guest Mode</h4>
+      <p>Your process information will be sent to the host.</p>
+      <p id="guest-status-detail">Waiting for process data from the extension...</p>
+    </div>
+
   </div>
 </body>
 </html>

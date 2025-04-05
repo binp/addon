@@ -1,120 +1,198 @@
 // SidePanel.js
 
-import { meet } from '@googleworkspace/meet-addons/meet.addons';
+import {
+  meet,
+  CoDoingState,
+} from '@googleworkspace/meet-addons/meet.addons';
 
 const CLOUD_PROJECT_NUMBER = '331777483172';
+let addOnSession = null;
+let sidePanelClient = null;
+let coDoingClient = null;
 
-/**
- * Prepares the add-on Side Panel Client, and adds an event to launch the
- * activity in the main stage when the main button is clicked.
- */
-export async function setUpAddon() {
-    const session = await meet.addon.createAddonSession({
-        cloudProjectNumber: CLOUD_PROJECT_NUMBER,
-    });
-    const sidePanelClient = await session.createSidePanelClient();
-    console.log("setUpAddon is called now.");
-}
 
-// Wait for the DOM to be fully loaded before running script
+
+
+
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM Loaded. Initializing Addon (Externally Hosted).');
-    console.log('window.name: ', window.name, 'document.name: ', document.name);
-  
-    // Get references to DOM elements
-    const processListElement = document.getElementById('process-list');
-    const statusElement = document.getElementById('status');
-    const errorElement = document.getElementById('error-message');
-  
-    // --- Helper Functions (same as before) ---
-  
-    function updateProcessList(processes) {
-      processListElement.innerHTML = '';
-      if (!processes || processes.length === 0) {
-        const li = document.createElement('li');
-        li.textContent = 'No matching processes found.';
-        processListElement.appendChild(li);
-      } else {
-        processes.forEach(procName => {
-          const li = document.createElement('li');
-          li.textContent = procName;
-          processListElement.appendChild(li);
-        });
-      }
+  console.log('DOM Loaded. Initializing Addon with Role Selection (npm package).');
+
+  // --- DOM References (same as before) ---
+  const processListElement = document.getElementById('process-list');
+  const statusElement = document.getElementById('status');
+  const errorElement = document.getElementById('error-message');
+  const bodyElement = document.body;
+  const roleSelectionDiv = document.getElementById('role-selection');
+  const hostButton = document.getElementById('host-button');
+  const guestButton = document.getElementById('guest-button');
+  const guestStatusDetail = document.getElementById('guest-status-detail');
+
+  // --- State Variables (same as before) ---
+  let isHost = false;
+  let roleSelected = false;
+  let session = null;
+  let sidePanelClient = null;
+  let coDoingClient = null;
+  const guestProcessData = {};
+
+  // --- Helper Functions (updateStatus, displayError, updateHostProcessList - same as before) ---
+  async function setUpAddon() {
+    if (session == null) {
+      session = await meet.addon.createAddonSession({
+        cloudProjectNumber: CLOUD_PROJECT_NUMBER,
+      });  
     }
-  
-    function updateStatus(text) {
-      statusElement.textContent = `Status: ${text}`;
+    if (sidePanelClient == null) {
+      sidePanelClient = await session.createSidePanelClient();
     }
-  
-    function displayError(text) {
-      if (text) {
-        errorElement.textContent = text;
-        errorElement.style.display = 'block';
-      } else {
-        errorElement.textContent = '';
-        errorElement.style.display = 'none';
-      }
+    if (coDoingClient == null) {
+      coDoingClient = await session.createCoDoingClient({
+        activityTitle: "Proctor Monitoring",
+        onCoDoingStateChanged(coDoingState) {
+          guestProcessData = JSON.parse(new TextDecoder().decode(coDoingState.bytes));
+          // Update the guestProcessInfo on the sidePanel for host mode only.
+          console.log("Recevied the guest process information: ", guestProcessData);
+          updateHostProcessList();
+        },
+      });
     }
-  
-    // --- Meet Add-on SDK Initialization ---
-    const meetOrigin = 'https://meet.google.com';
-    console.log("Addon sending 'addonOpened' message to target:", meetOrigin);
+  }
+
+  function updateStatus(text) {
+    statusElement.textContent = `Status: ${text}`;
+  }
+
+  function displayError(text) {
+    if (text) {
+      errorElement.textContent = text;
+      errorElement.style.display = 'block';
+    } else {
+      errorElement.textContent = '';
+      errorElement.style.display = 'none';
+    }
+  }
+
+  /** Updates the list displayed by the host */
+  function updateHostProcessList() {
+    if (!isHost) {
+      console.log("This is in guest mode. Skip to display the process information in the side panel.");
+      return; // Only host updates this list
+    }
+
+    processListElement.innerHTML = ''; // Clear list
+    let count = 0;
+    for (const userId in guestProcessData) {
+      const data = guestProcessData[userId];
+      const li = document.createElement('li');
+      // Display name and processes, handle cases where processes might be missing/empty
+      const processString = (data.processes && data.processes.length > 0)
+                             ? data.processes.join(', ')
+                             : '<i>No processes reported</i>';
+      li.innerHTML = `<b>${data.name || 'Guest ' + userId.substring(0, 4)}:</b> ${processString}`;
+      processListElement.appendChild(li);
+      count++;
+    }
+    if (count === 0) {
+      const li = document.createElement('li');
+      li.textContent = 'Waiting for guest data...';
+      processListElement.appendChild(li);
+    }
+  }
+
+  // --- Mode Initialization (Called AFTER role selection) ---
+  async function startSelectedMode(chosenIsHost) {
+    if (roleSelected || !sdkInstance) {
+      console.warn("Role already selected or SDK not ready.");
+      return;
+    }
+    roleSelected = true;
+    isHost = chosenIsHost;
+
+    console.log(`Role selected: ${isHost ? 'Host' : 'Guest'}`);
+    displayError(null);
+    bodyElement.classList.add('role-selected');
+    bodyElement.classList.add(isHost ? 'host-mode' : 'guest-mode');
+
+    updateStatus('Initializing codoing session...');
     try {
-        window.top.postMessage({ type: 'addonOpened' }, meetOrigin);
-        updateStatus('Connecting to extension...');
-    } catch (e) {
-        console.error("Error sending addonOpened message:", e);
-        displayError("Failed to communicate with Meet page.");
-        updateStatus("Initialization Error");
-    }
-
-
-    // --- postMessage Communication Logic ---
-  
-    function handleMessage(event) {
-      // SECURITY CHECK: ALWAYS verify the origin of the sender
-      const expectedOrigin = 'https://meet.google.com';
-      if (event.origin !== expectedOrigin) {
-          console.warn(`Ignoring message from unexpected origin: ${event.origin}. Expected '${expectedOrigin}'`);
-          console.log("Received event.data: ", event.data)
-          return; // Stop processing if origin doesn't match
+      console.log('Starting/Joining collaboration...');
+      // Use the stored sdkInstance from registerSdk()
+      if (coDoingClient == null) {
+        await setUpAddon();
       }
-  
-      console.log('Addon received message:', event.data, 'from origin:', event.origin);
-      const message = event.data;
-  
-      displayError(null); // Clear previous error
-  
-      switch (message?.type) {
-        case 'processUpdate':
-          updateProcessList(message.data || []);
-          updateStatus(`Monitoring active. Last update: ${new Date().toLocaleTimeString()}`);
-          break;
-        case 'daemonError':
-          displayError(`Daemon Error: ${message.data}`);
-          updateStatus('An error occurred.');
-          updateProcessList([]);
-          break;
-        case 'daemonDisconnected':
-          displayError(null);
-          updateStatus('Daemon disconnected. Monitoring stopped.');
-          updateProcessList([]);
-          break;
-        default:
-          console.log('Addon received unknown message type:', message);
-          break;
+      console.log('Collaboration started/joined.');
+      updateStatus(isHost ? 'Host mode listening.' : 'Guest mode ready to send.');
+
+      if (isHost) {
+        // HOST: Listen for broadcasts
+        // TODO: please use coDoingClinet API.
+        updateHostProcessList(); // Initial render
+      } else {
+        // GUEST: Send 'addonOpened' message to the window.top.
+         const meetOrigin = 'https://meet.google.com';
+         console.log("Guest sending 'addonOpened' message to target:", meetOrigin);
+         window.top.postMessage({ type: 'addonOpened' }, meetOrigin);
+         updateStatus('Guest mode active. Waiting for process info from extension.');
+         guestStatusDetail.textContent = 'Waiting for process info from extension...';
       }
+
+    } catch (err) {
+      console.error('Error starting collaboration:', err);
+      displayError(`Collaboration failed: ${err.message || err}`);
+      updateStatus('Collaboration Error');
+      roleSelected = false;
+      bodyElement.className = ''; // Reset mode classes
     }
-  
-    // Add the event listener for messages from the parent window (Meet)
-    window.addEventListener('message', handleMessage);
-    console.log('Message listener added for parent communication.');
-  
-    // Cleanup listener on unload
-    window.addEventListener('unload', () => {
-       console.log('Addon unloading. Removing message listener.');
-       window.removeEventListener('message', handleMessage);
-    });
-  
-  }); // End DOMContentLoaded listener
+  }
+
+  // --- Message Handler (for communication FROM Content Script TO Addon - same logic) ---
+  function handleMessage(event) {
+    const expectedOrigin = 'https://meet.google.com';
+    if (event.origin !== expectedOrigin) { return; }
+
+    const message = event.data;
+    console.log('Addon received message from parent window:', message);
+
+    // GUESTS process messages from the extension
+    if (!isHost && roleSelected && message?.type === 'processUpdate') {
+      console.log('Guest received process update from extension:', message.data);
+      guestStatusDetail.textContent = `Sending process info (${message.data?.length || 0})...`;
+      displayError(null);
+
+      if (collaboration) {
+        // Use cod-doing API instead of collaboration.
+        // In the guest mode, this will call coDoingClient.broadcastStateUpdate(bytes).
+        const broadcastPayload = { type: 'processUpdate', processes: message.data || [] };
+        collaboration.broadcast(broadcastPayload).then(() => {
+          console.log('Process info broadcasted successfully.');
+          updateStatus(`Process info sent (${broadcastPayload.processes.length}).`);
+          guestStatusDetail.textContent = `Process info sent (${broadcastPayload.processes.length}). Waiting for next update...`;
+        }).catch(err => {
+          console.error('Error broadcasting process info:', err);
+          displayError(`Failed to send process info: ${err.message || err}`);
+          updateStatus('Broadcast Error');
+          guestStatusDetail.textContent = 'Error sending process info.';
+        });
+      } else {
+        console.warn('Cannot broadcast: Collaboration session not ready.');
+        displayError('Collaboration session not active. Cannot send data.');
+        updateStatus('Collaboration Error');
+        guestStatusDetail.textContent = 'Collaboration session not active.';
+      }
+    } else if (!isHost && roleSelected && (message?.type === 'daemonError' || message?.type === 'daemonDisconnected')) {
+       console.warn('Received daemon status from extension:', message.type, message.data);
+       displayError(`Extension reported: ${message.type} ${message.data || ''}`);
+       updateStatus('Extension Error');
+       guestStatusDetail.textContent = `Extension reported an error: ${message.type}.`;
+    }
+  }
+
+  // --- Initialization & Event Listeners ---
+  hostButton.addEventListener('click', () => startSelectedMode(true));
+  guestButton.addEventListener('click', () => startSelectedMode(false));
+  window.addEventListener('message', handleMessage);
+  setUpAddon(); // Complete the set up of the addon and create session, sidePanelClient and coDoingClient.
+  window.addEventListener('unload', () => { /* ... cleanup ... */ });
+
+}); // End DOMContentLoaded listener
+
