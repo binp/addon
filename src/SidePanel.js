@@ -94,7 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- Mode Initialization (Called AFTER role selection) ---
   async function startSelectedMode(chosenIsHost) {
-    if (roleSelected || !sdkInstance) {
+    if (roleSelected || !coDoingClient) {
       console.warn("Role already selected or SDK not ready.");
       return;
     }
