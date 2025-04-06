@@ -190,12 +190,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
       fetch(SERVER_URL, {
         method: 'POST',
-        mode: 'cors', // Required for cross-origin requests
+        mode: 'cors',
         cache: 'no-cache',
         headers: {
-            'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
-        // Use redirect: 'follow' if needed, but Apps Script usually doesn't redirect POSTs
         body: JSON.stringify(payload)
       })
       .then(response => {
