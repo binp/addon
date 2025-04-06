@@ -124,14 +124,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 const rawData = startingState?.additionalData;
 
                 if (rawData) {
-                  try {
-                    // Parse the raw data, expecting it to be the process array
-                    guestProcessData = rawData;
-                    console.log('Parsed guest process list:', guestProcessData);
-                    updateHostProcessList(); // Update UI
-                  } catch (error) {
-                    console.log("We have not got the data yet. error: ", error)
-                  }
+                   try {
+                      // Parse the raw data, expecting it to be the process array
+                      const parsedData = JSON.parse(rawData);
+                      // Validate that the parsed data is actually an array
+                      if (Array.isArray(parsedData)) {
+                          // Store the valid parsed array
+                          newProcessList = parsedData; 
+                          console.log('Parsed guest process list:', newProcessList);
+                          // --- Modify the const array AFTER the try block ---
+                          // Clear the existing array referenced by guestProcessData
+                          guestProcessData.length = 0; 
+                          // Add elements from the (potentially empty) new list
+                          guestProcessData.push(newProcessList); 
+
+                          updateHostProcessList(); // Update UI
+                       } else {
+                           console.warn('Parsed additionalData is not an array:', parsedData);
+                           // Keep newProcessList as empty array if data is not an array
+                       }
+                   } catch (error) {
+                     // Handle JSON parsing errors
+                     console.error('Failed to parse additionalData JSON:', error, 'Raw data:', rawData);
+                     // Keep newProcessList as empty array on error
+                   }
                 } else {
                     // Handle the case where additionalData string is missing
                     console.warn('startingState.additionalData is null or undefined.');
