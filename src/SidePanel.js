@@ -109,14 +109,34 @@ document.addEventListener('DOMContentLoaded', () => {
         // Inside Host logic in startSelectedMode, after setting isHost=true
         let pollIntervalId = null;
 
-        function fetchGuestData() {
+        async function fetchGuestData() {
             console.log('Host fetching data...');
-            const startingState = sidePanelClient.getActivityStartingState();
-            const additionalData = JSON.parse(startingState.additionalData);
-            console.log('Recevied the guest process information: ', additionalData);
-            Object.keys(guestProcessData).forEach(key => delete guestProcessData[key]); // Clear old
-            Object.assign(guestProcessData, additionalData); // Assign new data
-            updateHostProcessList(); // Update UI
+            let additionalData = {};
+            let startingState = null;
+
+            try {
+                startingState = await sidePanelClient.getActivityStartingState();
+                console.log('Got the starting state:', startingState);
+
+                const rawData = startingState?.additionalData;
+
+                if (rawData) {
+                    additionalData = JSON.parse(rawData);
+                    console.log('Parsed guest process information:', additionalData);
+                } else {
+                    console.warn('startingState.additionalData is null or undefined.');
+                }
+            } catch (error) {
+                if (error instanceof SyntaxError) {
+                    console.error('Failed to parse additionalData JSON:', error, 'Raw data:', startingState?.additionalData);
+                } else {
+                    console.error('Error fetching or processing starting state:', error);
+                }
+            }
+
+            Object.keys(guestProcessData).forEach(key => delete guestProcessData[key]);
+            Object.assign(guestProcessData, additionalData);
+            updateHostProcessList();
         }
 
         // Start polling
