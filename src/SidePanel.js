@@ -176,9 +176,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Send the process message to HTTP server.
       // Inside Guest logic, when processes are received from extension
+      // const payload = {
+      //   userId: ownUserInfo?.userSessionId || 'unknown_guest', // Get actual user ID from SDK
+      //   userName: ownUserInfo?.displayName || 'Unknown Guest', // Get actual name from SDK
+      //   processes: message.data || [] // Assuming message.data has the process list
+      // };
       const payload = {
-        userId: ownUserInfo?.userSessionId || 'unknown_guest', // Get actual user ID from SDK
-        userName: ownUserInfo?.displayName || 'Unknown Guest', // Get actual name from SDK
+        userId: 'binp_guest', // Get actual user ID from SDK
+        userName: 'binp Guest', // Get actual name from SDK
         processes: message.data || [] // Assuming message.data has the process list
       };
       console.log("server url", SERVER_URL, "HTTP payload: ", payload);
