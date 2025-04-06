@@ -129,8 +129,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     const parsedData = JSON.parse(rawData);
                     // Validate that the parsed data is actually an array
                     if (Array.isArray(parsedData)) {
-                        newProcessList = parsedData;
-                        console.log('Parsed guest process list:', newProcessList);
+                        guestProcessData = parsedData;
+                        console.log('Parsed guest process list:', guestProcessData);
+                        updateHostProcessList(); // Update UI
                     } else {
                          console.warn('Parsed additionalData is not an array:', parsedData);
                     }
@@ -150,16 +151,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 // newProcessList remains the default []
             }
-
-            // Directly assign the new process list 
-            // NOTE: Simple assignment might break reactivity if frameworks are used.
-            // For plain JS, we need to handle the update carefully if guestProcessData is const.
-            // Since guestProcessData is declared with const, we cannot reassign it directly.
-            // We need to clear the array and push the new elements.
-            guestProcessData.length = 0; // Clear the existing array
-            guestProcessData.push(...newProcessList); // Push new elements
-
-            updateHostProcessList(); // Update UI
         }
 
         // Start polling
