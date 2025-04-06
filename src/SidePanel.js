@@ -181,6 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
         userName: ownUserInfo?.displayName || 'Unknown Guest', // Get actual name from SDK
         processes: message.data || [] // Assuming message.data has the process list
       };
+      console.log("server url", SERVER_URL, "HTTP payload: ", payload);
 
       fetch(SERVER_URL, {
         method: 'POST',
@@ -192,7 +193,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Use redirect: 'follow' if needed, but Apps Script usually doesn't redirect POSTs
         body: JSON.stringify(payload)
       })
-      .then(response => response.json())
+      .then(response => {
+        console.log("Goe the response: ", response)
+        return response.json();
+      })
       .then(data => {
         if (data.success) {
             console.log('Successfully POSTed data to server:', data);
@@ -210,6 +214,8 @@ document.addEventListener('DOMContentLoaded', () => {
         updateStatus('Network Error (POST)');
         guestStatusDetail.textContent = 'Error sending process info.';
       });
+
+      console.log("The addon in guest mode post the data to the backend server.");
 
       // if (collaboration) {
       //   // Use cod-doing API instead of collaboration.
