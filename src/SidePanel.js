@@ -55,27 +55,27 @@ document.addEventListener('DOMContentLoaded', () => {
   /** Updates the list displayed by the host */
   function updateHostProcessList() {
     if (!isHost) {
-      console.log("This is in guest mode. Skip to display the process information in the side panel.");
+      console.log("This is in guest mode. Skip displaying process info in the side panel.");
       return; // Only host updates this list
     }
 
     processListElement.innerHTML = ''; // Clear list
-    let count = 0;
-    for (const userId in guestProcessData) {
-      const data = guestProcessData[userId];
-      const li = document.createElement('li');
-      // Display name and processes, handle cases where processes might be missing/empty
-      const processString = (data.processes && data.processes.length > 0)
-                             ? data.processes.join(', ')
-                             : '<i>No processes reported</i>';
-      li.innerHTML = `<b>${data.name || 'Guest ' + userId.substring(0, 4)}:</b> ${processString}`;
-      processListElement.appendChild(li);
-      count++;
-    }
-    if (count === 0) {
-      const li = document.createElement('li');
-      li.textContent = 'Waiting for guest data...';
-      processListElement.appendChild(li);
+
+    // Now guestProcessData is expected to be an array of strings
+    if (guestProcessData && guestProcessData.length > 0) {
+        guestProcessData.forEach(processString => {
+            const li = document.createElement('li');
+            li.textContent = processString || '-'; // Display process string or a placeholder
+            processListElement.appendChild(li);
+        });
+        // Update status to show the count
+        updateStatus(`Host mode listening. Displaying ${guestProcessData.length} processes.`);
+    } else {
+        // Display a message if the array is empty or not yet populated
+        const li = document.createElement('li');
+        li.textContent = 'Waiting for guest process data...';
+        processListElement.appendChild(li);
+        updateStatus('Host mode listening. Waiting for data...');
     }
   }
 
@@ -111,32 +111,55 @@ document.addEventListener('DOMContentLoaded', () => {
 
         async function fetchGuestData() {
             console.log('Host fetching data...');
-            let additionalData = {};
+            // Default to an empty array, as we now expect an array of processes
+            let newProcessList = []; 
             let startingState = null;
 
             try {
-                startingState = await sidePanelClient.getActivityStartingState();
+                // Await the promise from getActivityStartingState
+                startingState = await sidePanelClient.getActivityStartingState(); 
                 console.log('Got the starting state:', startingState);
 
+                // Use optional chaining ?. to safely get additionalData string
                 const rawData = startingState?.additionalData;
 
                 if (rawData) {
-                    additionalData = JSON.parse(rawData);
-                    console.log('Parsed guest process information:', additionalData);
-                    Object.keys(guestProcessData).forEach(key => delete guestProcessData[key]);
-                    Object.assign(guestProcessData, additionalData);
-                    updateHostProcessList();        
-                  } else {
+                  try {
+                    // Parse the raw data, expecting it to be the process array
+                    const parsedData = JSON.parse(rawData);
+                    // Validate that the parsed data is actually an array
+                    if (Array.isArray(parsedData)) {
+                        newProcessList = parsedData;
+                        console.log('Parsed guest process list:', newProcessList);
+                    } else {
+                         console.warn('Parsed additionalData is not an array:', parsedData);
+                    }
+                  } catch (error) {
+                    console.log("We have not got the data yet.")
+                  }
+                } else {
+                    // Handle the case where additionalData string is missing
                     console.warn('startingState.additionalData is null or undefined.');
                 }
             } catch (error) {
+                // Handle potential errors from await or JSON.parse
                 if (error instanceof SyntaxError) {
                     console.error('Failed to parse additionalData JSON:', error, 'Raw data:', startingState?.additionalData);
                 } else {
                     console.error('Error fetching or processing starting state:', error);
                 }
+                // newProcessList remains the default []
             }
 
+            // Directly assign the new process list 
+            // NOTE: Simple assignment might break reactivity if frameworks are used.
+            // For plain JS, we need to handle the update carefully if guestProcessData is const.
+            // Since guestProcessData is declared with const, we cannot reassign it directly.
+            // We need to clear the array and push the new elements.
+            guestProcessData.length = 0; // Clear the existing array
+            guestProcessData.push(...newProcessList); // Push new elements
+
+            updateHostProcessList(); // Update UI
         }
 
         // Start polling
