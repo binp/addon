@@ -132,12 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
                           // Store the valid parsed array
                           newProcessList = parsedData; 
                           console.log('Parsed guest process list:', newProcessList);
-                          // --- Modify the const array AFTER the try block ---
-                          // Clear the existing array referenced by guestProcessData
-                          guestProcessData.length = 0; 
-                          // Add elements from the (potentially empty) new list
-                          guestProcessData.push(newProcessList); 
-
+                          Object.assign(guestProcessData, newProcessList);
                           updateHostProcessList(); // Update UI
                        } else {
                            console.warn('Parsed additionalData is not an array:', parsedData);
