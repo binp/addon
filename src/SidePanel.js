@@ -111,32 +111,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         function fetchGuestData() {
             console.log('Host fetching data...');
-            fetch(SERVER_URL, {
-                method: 'GET',
-                mode: 'cors',
-                cache: 'no-cache'
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    console.log('Host received data:', data.data);
-                    // Clear existing data and repopulate (simpler than merging)
-                    // Or implement merging logic if needed
-                    Object.keys(guestProcessData).forEach(key => delete guestProcessData[key]); // Clear old
-                    Object.assign(guestProcessData, data.data || {}); // Assign new data
-                    updateHostProcessList(); // Update UI
-                    updateStatus(`Host mode listening. Last fetch: ${new Date().toLocaleTimeString()}`);
-                } else {
-                    console.error('Server returned error on GET:', data.error);
-                    displayError(`Server error fetching data: ${data.error}`);
-                    updateStatus('Server Error (GET)');
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching data from server:', error);
-                displayError(`Network error fetching data: ${error.message}`);
-                updateStatus('Network Error (GET)');
-            });
+            const startingState = sidePanelClient.getActivityStartingState();
+            const additionalData = JSON.parse(startingState.additionalData);
+            console.log('Recevied the guest process information: ', additionalData);
+            Object.keys(guestProcessData).forEach(key => delete guestProcessData[key]); // Clear old
+            Object.assign(guestProcessData, additionalData); // Assign new data
+            updateHostProcessList(); // Update UI
         }
 
         // Start polling
@@ -182,45 +162,12 @@ document.addEventListener('DOMContentLoaded', () => {
       //   userName: ownUserInfo?.displayName || 'Unknown Guest', // Get actual name from SDK
       //   processes: message.data || [] // Assuming message.data has the process list
       // };
-      const payload = {
-        userId: 'binp_guest', // Get actual user ID from SDK
-        userName: 'binp Guest', // Get actual name from SDK
-        processes: message.data || [] // Assuming message.data has the process list
-      };
-      console.log("server url", SERVER_URL, "HTTP payload: ", payload);
-
-      fetch(SERVER_URL, {
-        method: 'POST',
-        mode: 'cors',
-        cache: 'no-cache',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      })
-      .then(response => {
-        console.log("Goe the response: ", response)
-        return response.json();
-      })
-      .then(data => {
-        if (data.success) {
-            console.log('Successfully POSTed data to server:', data);
-            updateStatus(`Process info sent (${payload.processes.length}).`);
-            guestStatusDetail.textContent = `Process info sent (${payload.processes.length}). Waiting for next update...`;
-        } else {
-            console.error('Server returned error:', data.error);
-            displayError(`Server error: ${data.error}`);
-            updateStatus('Server Error (POST)');
-        }
-      })
-      .catch(error => {
-        console.error('Error POSTing data to server:', error);
-        displayError(`Network error sending data: ${error.message}`);
-        updateStatus('Network Error (POST)');
-        guestStatusDetail.textContent = 'Error sending process info.';
+      // I will just send the messaeg.data.
+      console.log("Going to startActivity now...");
+      sidePanelClient.startActivity({
+        additionalData: JSON.stringify(message.data)
       });
-
+      console.log("Done with startActivity now. sent the data: ", message.data);
       console.log("The addon in guest mode post the data to the backend server.");
 
       // if (collaboration) {
