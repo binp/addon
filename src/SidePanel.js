@@ -123,7 +123,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (rawData) {
                     additionalData = JSON.parse(rawData);
                     console.log('Parsed guest process information:', additionalData);
-                } else {
+                    Object.keys(guestProcessData).forEach(key => delete guestProcessData[key]);
+                    Object.assign(guestProcessData, additionalData);
+                    updateHostProcessList();        
+                  } else {
                     console.warn('startingState.additionalData is null or undefined.');
                 }
             } catch (error) {
@@ -134,9 +137,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            Object.keys(guestProcessData).forEach(key => delete guestProcessData[key]);
-            Object.assign(guestProcessData, additionalData);
-            updateHostProcessList();
         }
 
         // Start polling
