@@ -126,17 +126,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (rawData) {
                   try {
                     // Parse the raw data, expecting it to be the process array
-                    const parsedData = JSON.parse(rawData);
-                    // Validate that the parsed data is actually an array
-                    if (Array.isArray(parsedData)) {
-                        guestProcessData = parsedData;
-                        console.log('Parsed guest process list:', guestProcessData);
-                        updateHostProcessList(); // Update UI
-                    } else {
-                         console.warn('Parsed additionalData is not an array:', parsedData);
-                    }
+                    guestProcessData = JSON.parse(rawData);
+                    console.log('Parsed guest process list:', guestProcessData);
+                    updateHostProcessList(); // Update UI
                   } catch (error) {
-                    console.log("We have not got the data yet.")
+                    console.log("We have not got the data yet. error: ", error)
                   }
                 } else {
                     // Handle the case where additionalData string is missing
