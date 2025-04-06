@@ -24,7 +24,6 @@ document.addEventListener('DOMContentLoaded', () => {
   let roleSelected = false;
   let session = null;
   let sidePanelClient = null;
-  const guestProcessData = {};
 
   // --- Helper Functions (updateStatus, displayError, updateHostProcessList - same as before) ---
   async function setUpAddon() {
@@ -53,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /** Updates the list displayed by the host */
-  function updateHostProcessList() {
+  function updateHostProcessList(guestProcessData) {
     if (!isHost) {
       console.log("This is in guest mode. Skip displaying process info in the side panel.");
       return; // Only host updates this list
@@ -132,8 +131,8 @@ document.addEventListener('DOMContentLoaded', () => {
                           // Store the valid parsed array
                           newProcessList = parsedData; 
                           console.log('Parsed guest process list:', newProcessList);
-                          Object.assign(guestProcessData, newProcessList);
-                          updateHostProcessList(); // Update UI
+                          updateHostProcessList(newProcessList); // Update UI
+                          console.log('Already show the process information in the side panel.');
                        } else {
                            console.warn('Parsed additionalData is not an array:', parsedData);
                            // Keep newProcessList as empty array if data is not an array
