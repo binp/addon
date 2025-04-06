@@ -126,7 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (rawData) {
                   try {
                     // Parse the raw data, expecting it to be the process array
-                    guestProcessData = JSON.parse(rawData);
+                    guestProcessData = rawData;
                     console.log('Parsed guest process list:', guestProcessData);
                     updateHostProcessList(); // Update UI
                   } catch (error) {
