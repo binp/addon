@@ -3,7 +3,8 @@
 import { meet } from '@googleworkspace/meet-addons/meet.addons';
 
 const CLOUD_PROJECT_NUMBER = '331777483172';
-const SERVER_URL = 'https://script.google.com/macros/s/AKfycbywU92GLCsou63SWeD6SO5cMtk9un1JJ5bISqgEhYD4sSRBws3rwNOCNyuEwSi6yX6o/exec';
+// const SERVER_URL = 'https://script.google.com/macros/s/AKfycbywU92GLCsou63SWeD6SO5cMtk9un1JJ5bISqgEhYD4sSRBws3rwNOCNyuEwSi6yX6o/exec';
+const SERVER_URL = 'https://script.google.com/macros/s/AKfycbydFolYPigaeJkuK9MwNIjaBqbmw3XLEUBcuY7pQi6Ym-S1wf5soSj1JsOMFJqIs3Qj/exec';
 
 document.addEventListener('DOMContentLoaded', () => {
   console.log('DOM Loaded. Initializing Addon with Role Selection (npm package).');
