@@ -116,24 +116,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 cache: 'no-cache'
             })
             .then(response => response.json())
-            .then(data => {
-              // This block executes if the response was OK and JSON parsing succeeded
-              console.log('[THEN] Successfully parsed JSON data:', data);
+            // .then(data => {
+            //   // This block executes if the response was OK and JSON parsing succeeded
+            //   console.log('[THEN] Successfully parsed JSON data:', data);
           
-              // --- Now you can use the 'data' object ---
-              // Example: Iterate over the process data received (assuming format like the Go server)
-              if (typeof data === 'object' && data !== null) {
-                  console.log('[THEN] Processing received user data:');
-                  for (const userId in data) {
-                      const userInfo = data[userId];
-                      console.log(`  User: ${userInfo.name || userId}`);
-                      console.log(`  Processes: ${userInfo.processes?.join(', ') || 'None'}`);
-                      console.log(`  Last Update: ${userInfo.lastUpdate}`);
-                  }
-              } else {
-                  console.warn('[THEN] Received data is not in the expected object format.');
-              }
-            })          
+            //   // --- Now you can use the 'data' object ---
+            //   // Example: Iterate over the process data received (assuming format like the Go server)
+            //   if (typeof data === 'object' && data !== null) {
+            //       console.log('[THEN] Processing received user data:');
+            //       for (const userId in data) {
+            //           const userInfo = data[userId];
+            //           console.log(`  User: ${userInfo.name || userId}`);
+            //           console.log(`  Processes: ${userInfo.processes?.join(', ') || 'None'}`);
+            //           console.log(`  Last Update: ${userInfo.lastUpdate}`);
+            //       }
+            //   } else {
+            //       console.warn('[THEN] Received data is not in the expected object format.');
+            //   }
+            // })          
             .then(data => {
                 console.log('Received the data: ', data);
                 if (typeof data === 'object' && data !== null) {
