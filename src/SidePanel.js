@@ -3,8 +3,7 @@
 import { meet } from '@googleworkspace/meet-addons/meet.addons';
 
 const CLOUD_PROJECT_NUMBER = '331777483172';
-// const SERVER_URL = 'https://script.google.com/macros/s/AKfycbywU92GLCsou63SWeD6SO5cMtk9un1JJ5bISqgEhYD4sSRBws3rwNOCNyuEwSi6yX6o/exec';
-const SERVER_URL = 'https://script.google.com/macros/s/AKfycbydFolYPigaeJkuK9MwNIjaBqbmw3XLEUBcuY7pQi6Ym-S1wf5soSj1JsOMFJqIs3Qj/exec';
+const SERVER_URL = 'https://helloworld-331777483172.us-west1.run.app';
 
 document.addEventListener('DOMContentLoaded', () => {
   console.log('DOM Loaded. Initializing Addon with Role Selection (npm package).');
@@ -106,55 +105,35 @@ document.addEventListener('DOMContentLoaded', () => {
       if (isHost) {
         // HOST: Listen for broadcasts
         // Inside Host logic in startSelectedMode, after setting isHost=true
+        // Inside Host logic in startSelectedMode, after setting isHost=true
         let pollIntervalId = null;
 
-        async function fetchGuestData() {
+        function fetchGuestData() {
             console.log('Host fetching data...');
-            // Default to an empty array, as we now expect an array of processes
-            let newProcessList = []; 
-            let startingState = null;
-
-            try {
-                // Await the promise from getActivityStartingState
-                startingState = await sidePanelClient.getActivityStartingState(); 
-                console.log('Got the starting state:', startingState);
-
-                // Use optional chaining ?. to safely get additionalData string
-                const rawData = startingState?.additionalData;
-
-                if (rawData) {
-                   try {
-                      // Parse the raw data, expecting it to be the process array
-                      const parsedData = JSON.parse(rawData);
-                      // Validate that the parsed data is actually an array
-                      if (Array.isArray(parsedData)) {
-                          // Store the valid parsed array
-                          newProcessList = parsedData; 
-                          console.log('Parsed guest process list:', newProcessList);
-                          updateHostProcessList(newProcessList); // Update UI
-                          console.log('Already show the process information in the side panel.');
-                       } else {
-                           console.warn('Parsed additionalData is not an array:', parsedData);
-                           // Keep newProcessList as empty array if data is not an array
-                       }
-                   } catch (error) {
-                     // Handle JSON parsing errors
-                     console.error('Failed to parse additionalData JSON:', error, 'Raw data:', rawData);
-                     // Keep newProcessList as empty array on error
-                   }
+            fetch(SERVER_URL, {
+                method: 'GET',
+                mode: 'cors',
+                cache: 'no-cache'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Host received data:', data.data);
+                    // Clear existing data and repopulate (simpler than merging)
+                    // Or implement merging logic if needed
+                    updateHostProcessList(data.data.processes); // Update UI
+                    updateStatus(`Host mode listening. Last fetch: ${new Date().toLocaleTimeString()}`);
                 } else {
-                    // Handle the case where additionalData string is missing
-                    console.warn('startingState.additionalData is null or undefined.');
+                    console.error('Server returned error on GET:', data.error);
+                    displayError(`Server error fetching data: ${data.error}`);
+                    updateStatus('Server Error (GET)');
                 }
-            } catch (error) {
-                // Handle potential errors from await or JSON.parse
-                if (error instanceof SyntaxError) {
-                    console.error('Failed to parse additionalData JSON:', error, 'Raw data:', startingState?.additionalData);
-                } else {
-                    console.error('Error fetching or processing starting state:', error);
-                }
-                // newProcessList remains the default []
-            }
+            })
+            .catch(error => {
+                console.error('Error fetching data from server:', error);
+                displayError(`Network error fetching data: ${error.message}`);
+                updateStatus('Network Error (GET)');
+            });
         }
 
         // Start polling
@@ -193,20 +172,51 @@ document.addEventListener('DOMContentLoaded', () => {
       guestStatusDetail.textContent = `Sending process info (${message.data?.length || 0})...`;
       displayError(null);
 
-      // Send the process message to HTTP server.
+
       // Inside Guest logic, when processes are received from extension
-      // const payload = {
-      //   userId: ownUserInfo?.userSessionId || 'unknown_guest', // Get actual user ID from SDK
-      //   userName: ownUserInfo?.displayName || 'Unknown Guest', // Get actual name from SDK
-      //   processes: message.data || [] // Assuming message.data has the process list
-      // };
-      // I will just send the messaeg.data.
-      console.log("Going to startActivity now...");
-      sidePanelClient.startActivity({
-        additionalData: JSON.stringify(message.data)
+      const payload = {
+        userId: 'binp_guest', // Get actual user ID from SDK
+        userName: 'binp Guest', // Get actual name from SDK
+        processes: message.data || [] // Assuming message.data has the process list
+      };
+
+      fetch(SERVER_URL, {
+        method: 'POST',
+        mode: 'cors', // Required for cross-origin requests
+        cache: 'no-cache',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        // Use redirect: 'follow' if needed, but Apps Script usually doesn't redirect POSTs
+        body: JSON.stringify(payload)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+            console.log('Successfully POSTed data to server:', data);
+            updateStatus(`Process info sent (${payload.processes.length}).`);
+            guestStatusDetail.textContent = `Process info sent (${payload.processes.length}). Waiting for next update...`;
+        } else {
+            console.error('Server returned error:', data.error);
+            displayError(`Server error: ${data.error}`);
+            updateStatus('Server Error (POST)');
+        }
+      })
+      .catch(error => {
+        console.error('Error POSTing data to server:', error);
+        displayError(`Network error sending data: ${error.message}`);
+        updateStatus('Network Error (POST)');
+        guestStatusDetail.textContent = 'Error sending process info.';
       });
-      console.log("Done with startActivity now. sent the data: ", message.data);
-      console.log("The addon in guest mode post the data to the backend server.");
+
+
+      // I will just send the messaeg.data.
+      // console.log("Going to startActivity now...");
+      // sidePanelClient.startActivity({
+      //   additionalData: JSON.stringify(message.data)
+      // });
+      // console.log("Done with startActivity now. sent the data: ", message.data);
+      // console.log("The addon in guest mode post the data to the backend server.");
 
       // if (collaboration) {
       //   // Use cod-doing API instead of collaboration.
