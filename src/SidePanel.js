@@ -117,6 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .then(response => response.json())
             .then(data => {
+                console.log('Received the data: ', data);
                 if (data.success) {
                     console.log('Host received data:', data.data);
                     // Clear existing data and repopulate (simpler than merging)
