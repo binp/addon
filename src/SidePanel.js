@@ -3,7 +3,7 @@
 import { meet } from '@googleworkspace/meet-addons/meet.addons';
 
 const CLOUD_PROJECT_NUMBER = '331777483172';
-const SERVER_URL = 'https://helloworld-331777483172.us-west1.run.app';
+const SERVER_URL = 'https://helloworld-331777483172.us-west1.run.app/processes';
 
 document.addEventListener('DOMContentLoaded', () => {
   console.log('DOM Loaded. Initializing Addon with Role Selection (npm package).');
