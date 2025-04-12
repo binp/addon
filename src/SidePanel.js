@@ -204,24 +204,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const response = await fetch(SERVER_URL, { method: 'GET', mode: 'cors', cache: 'no-cache' });
         if (!response.ok) { throw new Error(`HTTP error ${response.status}`); }
         const serverData = await response.json();
-        //TODO(binp: we might want to change this.
-        if (serverData.success && typeof serverData.data === 'object') {
-            console.log('Host received data:', serverData.data);
-            let guestId = null;
-            for (const userId in serverData.data) {
-                if (ownUserInfo && userId !== ownUserInfo.userSessionId) { guestId = userId; break; }
-            }
-            if (guestId) {
+        console.log('Host received data:', serverData);
+        //TODO(binp): we might want to change this.
+        if (typeof serverData === 'object' && serverData !== null) {
+            //TODO: The code only work in the single guest mode.
+            for (const userId in serverData) {
                 // **ASSUMPTION**: serverData.data[guestId] now contains:
                 // { name: '..', lastUpdate: '..', processes: { status: '..', details: [] }, tabs: {...}, screenshots: {...}, timelineEvents: [...] }
-                currentGuestData = serverData.data[guestId];
-                console.log('Displaying data for guest:', guestId);
-            } else {
-                console.log('No guest data found in response.');
-                currentGuestData = null;
+                currentGuestData = serverData[userId];
+                console.log('Displaying data for guest:',userId);
+                updateHostDashboard(); // Update UI
+                updateStatus(`Host mode listening. Last fetch: ${new Date().toLocaleTimeString()}`);
             }
-            updateHostDashboard(); // Update UI
-            updateStatus(`Host mode listening. Last fetch: ${new Date().toLocaleTimeString()}`);
         } else {
           throw new Error(serverData.error || 'Invalid data format');
         }
