@@ -297,7 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
          console.log("Guest sending 'addonOpened' message to target:", meetOrigin);
          window.top.postMessage({ type: 'addonOpened' }, meetOrigin);
 
-         // Set initial guest status text.
+         // Set initial guest status text.  
          guestConnectionStatusDiv.textContent = 'Status: Waiting for connection from extension...';
          updateStatus('Guest mode active.');
 
