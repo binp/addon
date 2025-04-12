@@ -1,72 +1,146 @@
 /* src/sidepanel.css */
+/* Base styles for the addon body */
 body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   margin: 0;
   padding: 10px;
   font-size: 14px;
-  background-color: #f8f9fa;
-  color: #202124;
-  height: 100vh; /* Ensure full height */
-  box-sizing: border-box;
+  background-color: #f8f9fa; /* Light grey background */
+  color: #202124; /* Standard Google text color */
+  height: 100vh; /* Ensure body takes full viewport height */
+  box-sizing: border-box; /* Include padding in height calculation */
   display: flex;
-  flex-direction: column; /* Allow container to grow */
+  flex-direction: column; /* Stack content vertically */
 }
 
+/* Main container for padding and layout */
 .container {
   padding: 5px;
-  flex-grow: 1; /* Allow container to grow */
-  overflow-y: auto; /* Add scroll to container if content overflows */
+  flex-grow: 1; /* Allow container to fill available space */
+  display: flex; /* Use flexbox for container children */
+  flex-direction: column; /* Stack children vertically */
+  overflow-y: auto; /* Add scrollbar if content overflows */
 }
 
+/* Headings */
 h4 {
   margin-top: 0;
   margin-bottom: 10px;
-  font-weight: 500;
-  color: #3c4043;
-  display: inline-block;
+  font-weight: 500; /* Medium weight */
+  color: #3c4043; /* Darker grey text */
+  display: inline-block; /* Keep inline with potential icons */
 }
 h5 {
     margin-top: 5px;
     margin-bottom: 5px;
     font-weight: 500;
-    border-bottom: 1px solid #e8eaed; /* Add border to all H5 */
+    border-bottom: 1px solid #e8eaed; /* Separator line */
     padding-bottom: 5px;
     margin-bottom: 8px;
 }
 
-/* --- Role Selection (Unchanged) --- */
-#role-selection { text-align: center; padding: 20px 0; border-bottom: 1px solid #dadce0; margin-bottom: 15px; }
-.role-button { padding: 10px 20px; font-size: 1em; cursor: pointer; margin: 0 10px; border: 1px solid #dadce0; border-radius: 4px; background-color: #ffffff; color: #1a73e8; }
-.role-button:hover { background-color: #f8f9fa; }
-.role-button:active { background-color: #e8f0fe; }
+/* --- Role Selection --- */
+#role-selection {
+  text-align: center;
+  padding: 20px 0;
+  border-bottom: 1px solid #dadce0; /* Separator */
+  margin-bottom: 15px;
+}
+
+.role-button {
+  padding: 10px 20px;
+  font-size: 1em;
+  cursor: pointer;
+  margin: 0 10px; /* Space between buttons */
+  border: 1px solid #dadce0; /* Subtle border */
+  border-radius: 4px;
+  background-color: #ffffff; /* White background */
+  color: #1a73e8; /* Google blue text */
+}
+.role-button:hover {
+    background-color: #f8f9fa; /* Light grey on hover */
+}
+.role-button:active {
+    background-color: #e8f0fe; /* Lighter blue on click */
+}
 
 /* --- Host Mode Specific --- */
-.guest-header { display: flex; align-items: center; margin-bottom: 5px; }
-.status-icon { font-size: 1.5em; margin-right: 8px; line-height: 1; }
+.guest-header {
+    display: flex;
+    align-items: center; /* Align icon and text vertically */
+    margin-bottom: 5px;
+}
+.status-icon {
+    font-size: 1.5em; /* Make icon larger */
+    margin-right: 8px;
+    line-height: 1; /* Prevent extra vertical space */
+}
+/* Status icon colors */
 .status-icon.ok { color: #34a853; } /* Green */
 .status-icon.warning { color: #fbbc04; } /* Yellow */
 .status-icon.alert { color: #ea4335; } /* Red */
 .status-icon.unknown { color: #9aa0a6; } /* Grey */
 
-.subtle-text { font-size: 0.8em; color: #5f6368; margin-bottom: 10px; }
+/* Subtle text style for timestamps etc. */
+.subtle-text {
+    font-size: 0.8em;
+    color: #5f6368; /* Medium grey */
+    margin-bottom: 10px;
+}
 
-.detail-section { margin-bottom: 15px; padding: 10px; background-color: #fff; border: 1px solid #dadce0; border-radius: 4px; }
-/* Removed bottom border from h5 here, added above */
+/* Styling for sections showing details (Processes, Tabs, etc.) */
+.detail-section {
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: #fff; /* White background for sections */
+    border: 1px solid #dadce0; /* Light border */
+    border-radius: 4px;
+}
 
-.status-text { font-weight: normal; font-style: italic; font-size: 0.9em; }
+/* Status text within detail sections (OK, Warning, Alert) */
+.status-text {
+    font-weight: normal;
+    font-style: italic;
+    font-size: 0.9em;
+}
 .status-text.ok { color: #34a853; }
-.status-text.warning { color: #e67c00; }
+.status-text.warning { color: #e67c00; } /* Darker Yellow for contrast */
 .status-text.alert { color: #d93025; }
 
-.details-list { list-style-type: none; padding-left: 5px; margin: 0; font-size: 0.9em; }
-.details-list li { margin-bottom: 4px; word-wrap: break-word; line-height: 1.4; }
-.details-list li b { color: #1a73e8; } /* Guest name styling */
-.details-list li i { color: #5f6368; } /* Placeholder styling */
+/* Unordered lists used for details (processes, tabs, timeline) */
+.details-list {
+    list-style-type: none; /* Remove bullets */
+    padding-left: 5px;
+    margin: 0;
+    font-size: 0.9em;
+}
+.details-list li {
+    margin-bottom: 4px;
+    word-wrap: break-word; /* Wrap long text */
+    line-height: 1.4;
+}
+/* Style guest name in Host timeline/list */
+.details-list li b {
+    color: #1a73e8; /* Google blue */
+}
+/* Style placeholder text (e.g., "No processes") */
+.details-list li i {
+    color: #5f6368; /* Medium grey */
+}
 
-.details-text { font-size: 0.9em; margin: 0; padding-left: 5px; word-wrap: break-word; line-height: 1.4; }
+/* Paragraph text used for details (e.g., screenshot info) */
+.details-text {
+    font-size: 0.9em;
+    margin: 0;
+    padding-left: 5px;
+    word-wrap: break-word;
+    line-height: 1.4;
+}
 
-/* --- Timeline Specific Styles --- */
-#host-timeline-section h5 { margin-bottom: 10px; } /* More space for timeline heading */
+/* Timeline Specific Styles */
+#host-timeline-section h5 {
+    margin-bottom: 10px; /* More space for timeline heading */
+}
 .timeline-list {
     max-height: 200px; /* Limit height and make scrollable */
     overflow-y: auto;
@@ -89,21 +163,94 @@ h5 {
     /* Style description if needed */
 }
 
+/* --- Guest Mode Specific --- */
+.guest-layout {
+    display: flex;
+    flex-direction: column; /* Stack links and status */
+    justify-content: space-between; /* Push status to bottom */
+    align-items: center; /* Center items horizontally */
+    height: 100%; /* Take full height of container */
+    text-align: center;
+}
+.guest-links-container {
+    margin-top: 30px; /* Add some space from top */
+    padding: 15px;
+    background-color: #fff;
+    border: 1px solid #dadce0;
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1); /* Subtle shadow */
+}
+.guest-links-container h4 {
+    margin-bottom: 15px;
+}
+.guest-links-container p {
+    margin-bottom: 15px;
+    font-size: 0.9em;
+    color: #3c4043;
+}
+.install-link {
+    display: block; /* Each link on its own line */
+    margin: 10px auto; /* Center links with margin */
+    padding: 10px 15px;
+    background-color: #1a73e8; /* Google blue */
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-weight: 500;
+    max-width: 200px; /* Limit link width */
+}
+.install-link:hover {
+    background-color: #185abc; /* Darker blue on hover */
+}
+.guest-connection-status {
+    width: 100%;
+    padding: 10px;
+    margin-top: 20px; /* Space above status */
+    font-size: 0.9em;
+    color: #5f6368;
+    border-top: 1px solid #dadce0; /* Separator line */
+    background-color: #f8f9fa; /* Match body background */
+    text-align: center;
+    box-sizing: border-box; /* Include padding in width */
+}
 
-/* --- Status & Error (Unchanged) --- */
-#status { margin-top: 15px; font-style: italic; color: #5f6368; font-size: 0.9em; }
-.error-message { color: #d93025; font-weight: bold; margin-top: 10px; margin-bottom: 10px; padding: 8px; background-color: #fce8e6; border: 1px solid #f4c7c3; border-radius: 4px; }
 
-/* --- Visibility Control (Unchanged) --- */
-.content-section { display: none; }
-body.role-selected #role-selection { display: none; }
-body.host-mode.role-selected .host-only { display: block; }
-body.guest-mode.role-selected .guest-only { display: block; }
+/* --- Status & Error --- */
+/* General status message shown below role selection or main content */
+#status {
+    margin-top: 15px;
+    font-style: italic;
+    color: #5f6368;
+    font-size: 0.9em;
+    text-align: center;
+}
+/* Error message styling */
+.error-message {
+    color: #d93025; /* Google error red */
+    font-weight: bold;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    padding: 8px;
+    background-color: #fce8e6; /* Light red background */
+    border: 1px solid #f4c7c3; /* Light red border */
+    border-radius: 4px;
+}
 
-/* Optional: Hide detail sections only if status is OK */
-/* .detail-section { display: none; } */
-/* body.host-mode.role-selected .detail-section.status-ok { display: none; } */ /* JS needs to add/remove status-ok class */
-/* body.host-mode.role-selected .detail-section.status-warning,
-body.host-mode.role-selected .detail-section.status-alert,
-body.host-mode.role-selected .detail-section.status-unknown { display: block; } */
-
+/* --- Visibility Control --- */
+/* Hide main content sections by default */
+.content-section {
+    display: none;
+}
+/* Hide role selection once a role is selected */
+body.role-selected #role-selection {
+    display: none;
+}
+/* Show host section only when body has 'host-mode' and 'role-selected' */
+body.host-mode.role-selected .host-only {
+    display: block;
+}
+/* Show guest section only when body has 'guest-mode' and 'role-selected' */
+/* Use flex for guest layout to enable justify-content: space-between */
+body.guest-mode.role-selected .guest-only {
+    display: flex;
+}

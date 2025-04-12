@@ -267,9 +267,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     console.log(`Role selected: ${isHost ? 'Host' : 'Guest'}`);
     displayError(null);
-    bodyElement.classList.add('role-selected');
-    bodyElement.classList.add(isHost ? 'host-mode' : 'guest-mode');
+    bodyElement.className = 'role-selected ' + (isHost ? 'host-mode' : 'guest-mode'); // Set body class
 
+    console.log("meetingId: ", meet.addon.meetingId, " meetingCode: ", meet.addon.meetingCode);
     updateStatus('Initializing codoing session...');
     try {
       console.log('Make sure the sidePanelClient has initialized...');
@@ -279,32 +279,38 @@ document.addEventListener('DOMContentLoaded', () => {
         await setUpAddon();
       }
       console.log('The side panel has started/joined.');
-      updateStatus(isHost ? 'Host mode listening.' : 'Guest mode ready to send.');
+      // updateStatus(isHost ? 'Host mode listening.' : 'Guest mode ready to send.');
 
       if (isHost) {
         sidePanelClient.startActivity();
         // HOST: Listen for broadcasts
         // Inside Host logic in startSelectedMode, after setting isHost=true
         // Inside Host logic in startSelectedMode, after setting isHost=true
-
+        updateStatus('Host mode active. Fetching initial data...');
+        updateHostDashboard();
         // Start polling
         fetchHostData(); // Fetch immediately
-        pollIntervalId = setInterval(fetchHostData, 15000); // Fetch every 15 seconds (adjust interval as needed)
-
+        if (!pollIntervalId) pollIntervalId = setInterval(fetchHostData, 15000); // Fetch every 15 seconds (adjust interval as needed)
       } else {
         // GUEST: Send 'addonOpened' message to the window.top.
          const meetOrigin = 'https://meet.google.com';
          console.log("Guest sending 'addonOpened' message to target:", meetOrigin);
          window.top.postMessage({ type: 'addonOpened' }, meetOrigin);
-         updateStatus('Guest mode active. Waiting for process info from extension.');
-         guestStatusDetail.textContent = 'Waiting for process info from extension...';
+
+         // Set initial guest status text.
+         guestConnectionStatusDiv.textContent = 'Status: Waiting for connection from extension...';
+         updateStatus('Guest mode active.');
+
+        // Set placeholder links (REPLACE with actual URLs)
+        extensionLink.href = 'https://binp.github.io'; // TODO: Replace with Chrome Web Store link
+        daemonLink.href = 'https://binp.github.io'; // TODO: Replace with Daemon download link
       }
 
     } catch (err) {
       console.error('Error starting collaboration:', err);
       displayError(`Collaboration failed: ${err.message || err}`);
       updateStatus('Collaboration Error');
-      roleSelected = false;
+      roleSelected = false;    // Allow re-selection?
       bodyElement.className = ''; // Reset mode classes
     }
   }
@@ -326,8 +332,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Inside Guest logic, when processes are received from extension
       const payload = {
-        userId: 'binp_guest', // Get actual user ID from SDK
-        userName: 'binp Guest', // Get actual name from SDK
+        userId: meet.addon.meetingId,  // No way to get the real user ID.
+        userName: meet.addon.meetingCode,  // No way to get the user name.
         processes: message.data || [] // Assuming message.data has the process list
       };
 

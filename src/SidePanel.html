@@ -1,50 +1,10 @@
-<!-- <!DOCTYPE html>
-<html>
-<head>
-  <base target="_top">
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="SidePanel.css">
-  <script src="dist/main.js" defer></script>
-  <title>Proctor Addon</title>
-</head>
-<body>
-  <div class="container">
-    < ! --This will create the addon session. Otherwise, the sidaPanel will hanging on. - - >
- 
-    <div id="role-selection">
-        <h4>Select Your Role:</h4>
-        <button id="host-button" class="role-button">Run as Host</button>
-        <button id="guest-button" class="role-button">Run as Guest</button>
-    </div>
-
-    <div id="status">Please select your role above.</div>
-    <div id="error-message" class="error-message" style="display: none;"></div>
-
-    <div class="host-only content-section">
-      <h4>Guest Process Information:</h4>
-      <ul id="process-list">
-        </ul>
-    </div>
-
-    <div class="guest-only content-section">
-      <h4>Guest Mode</h4>
-      <p>Your process information will be sent to the host.</p>
-      <p id="guest-status-detail">Waiting for process data from the extension...</p>
-    </div>
-
-  </div>
-</body>
-</html> -->
-
-
 <!DOCTYPE html>
 <html>
 <head>
   <base target="_top">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="sidepanel.css">
+  <link rel="stylesheet" href="SidePanel.css">
   <title>Proctor Addon</title>
   </head>
 <body>
@@ -83,12 +43,19 @@
               <li><i>No events yet...</i></li>
           </ul>
       </div>
-      </div>
+    </div>
 
-    <div class="guest-only content-section">
-      <h4>Guest Mode</h4>
-      <p>Your process information will be sent to the host.</p>
-      <p id="guest-status-detail">Waiting for process data from the extension...</p>
+    <div class="guest-only content-section guest-layout">
+        <div id="guest-links" class="guest-links-container">
+            <h4>Required Components:</h4>
+            <p>Please ensure both components below are installed and running:</p>
+            <a id="extension-link" href="#" target="_blank" rel="noopener noreferrer" class="install-link">1. Install Chrome Extension</a>
+            <a id="daemon-link" href="#" target="_blank" rel="noopener noreferrer" class="install-link">2. Install Local Agent</a>
+            <p class="subtle-text">(Links should open installation pages)</p>
+        </div>
+        <div id="guest-connection-status" class="guest-connection-status">
+            Status: Initializing...
+        </div>
     </div>
 
   </div>
