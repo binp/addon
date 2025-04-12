@@ -104,43 +104,73 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Process Status ---
     // **ASSUMPTION**: currentGuestData contains objects like:
-    // processes: { status: 'ok'|'warning'|'alert', details: ['proc1', 'proc2'] }
-    // tabs: { status: 'ok', details: ['url1'] }
+    // processes: ['proc1', 'proc2']
+    // tabs: ['url1']
     // screenshots: { status: 'warning', details: 'Possible phone detected' }
     // timelineEvents: [ { timestamp: 'ISO_string', description: 'Event text' }, ... ]
-    const processInfo = currentGuestData.processes || { status: 'unknown', details: [] };
-    hostProcessesStatus.textContent = processInfo.status.toUpperCase();
-    hostProcessesStatus.className = `status-text ${processInfo.status}`;
+    const processList = currentGuestData.processes || []; // Treat as a list
+    let processInfoStatus = 'ok'; // Default to ok
+    if (processList.length > 0) {
+        processInfoStatus = 'warning'; // Set to warning if list is not empty
+    }
+
+    // Update UI based on derived status and the list
+    hostProcessesStatus.textContent = processInfoStatus.toUpperCase();
+    hostProcessesStatus.className = `status-text ${processInfoStatus}`;
     hostProcessesList.innerHTML = ''; // Clear previous list
-    if (processInfo.status !== 'ok' && processInfo.details.length > 0) {
-      processInfo.details.forEach(proc => { /* ... create and append li ... */ });
-      hostProcessesSection.style.display = 'block';
-      if (processInfo.status === 'alert') overallStatus = 'alert';
-      else if (processInfo.status === 'warning') overallStatus = 'warning';
+
+    if (processInfoStatus !== 'ok') { // If status is 'warning'
+        processList.forEach(proc => {
+             const li = document.createElement('li');
+             // Assuming proc is just a string name based on previous comment
+             li.textContent = proc;
+             hostProcessesList.appendChild(li);
+         });
+        hostProcessesSection.style.display = 'block';
+        // Update overall status based on processInfoStatus
+        if (processInfoStatus === 'alert') overallStatus = 'alert'; // Keep for potential future alerts
+        else if (processInfoStatus === 'warning') overallStatus = 'warning'; // Only 'warning' possible currently
     } else {
-       hostProcessesStatus.textContent = 'OK'; // Explicitly show OK if no details
+       // Status is 'ok'
+       hostProcessesStatus.textContent = 'OK';
        hostProcessesStatus.className = `status-text ok`;
+       hostProcessesList.innerHTML = '<li><i>No flagged processes.</i></li>'; // Provide feedback
        // hostProcessesSection.style.display = 'none'; // Optional: Hide section if OK
     }
 
     // --- Tabs Status --- (Similar logic)
-    const tabInfo = currentGuestData.tabs || { status: 'unknown', details: [] };
-    hostTabsStatus.textContent = tabInfo.status.toUpperCase();
-    hostTabsStatus.className = `status-text ${tabInfo.status}`;
-    hostTabsList.innerHTML = '';
-     if (tabInfo.status !== 'ok' && tabInfo.details.length > 0) {
-        tabInfo.details.forEach(tab => { /* ... create and append li ... */ });
+    const tabList = currentGuestData.tabs || []; // Treat as a list
+    let tabInfoStatus = 'ok'; // Default to ok
+    if (tabList.length > 0) {
+        tabInfoStatus = 'warning'; // Set to warning if list is not empty
+    }
+
+    // Update UI based on derived status and the list
+    hostTabsStatus.textContent = tabInfoStatus.toUpperCase();
+    hostTabsStatus.className = `status-text ${tabInfoStatus}`;
+    hostTabsList.innerHTML = ''; // Clear previous list
+
+     if (tabInfoStatus !== 'ok') { // If status is 'warning'
+        tabList.forEach(tab => {
+            const li = document.createElement('li');
+             // Assuming tab is just a string (e.g., URL or title)
+             li.textContent = tab;
+             hostTabsList.appendChild(li);
+         });
         hostTabsSection.style.display = 'block';
-        if (tabInfo.status === 'alert') overallStatus = 'alert';
-        else if (tabInfo.status === 'warning' && overallStatus === 'ok') overallStatus = 'warning';
+        // Update overall status based on tabInfoStatus
+        if (tabInfoStatus === 'alert') overallStatus = 'alert'; // Keep for potential future alerts
+        else if (tabInfoStatus === 'warning' && overallStatus === 'ok') overallStatus = 'warning'; // Only 'warning' possible
      } else {
+        // Status is 'ok'
         hostTabsStatus.textContent = 'OK';
         hostTabsStatus.className = `status-text ok`;
+        hostTabsList.innerHTML = '<li><i>No flagged tabs.</i></li>'; // Provide feedback
         // hostTabsSection.style.display = 'none'; // Optional: Hide section if OK
      }
 
     // --- Screenshot Status --- (Different display)
-    const screenInfo = currentGuestData.screenshots || { status: 'unknown', details: '' };
+    const screenInfo = currentGuestData.screenshots || { status: 'ok', details: '' };
     hostScreenshotStatus.textContent = screenInfo.status.toUpperCase();
     hostScreenshotStatus.className = `status-text ${screenInfo.status}`;
     hostScreenshotDetails.textContent = '';
@@ -212,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // **ASSUMPTION**: serverData.data[guestId] now contains:
                 // { name: '..', lastUpdate: '..', processes: { status: '..', details: [] }, tabs: {...}, screenshots: {...}, timelineEvents: [...] }
                 currentGuestData = serverData[userId];
-                console.log('Displaying data for guest:',userId);
+                console.log('Displaying data for guest:', userId);
                 updateHostDashboard(); // Update UI
                 updateStatus(`Host mode listening. Last fetch: ${new Date().toLocaleTimeString()}`);
             }
