@@ -6,10 +6,9 @@ const CLOUD_PROJECT_NUMBER = '331777483172';
 const SERVER_URL = 'https://helloworld-331777483172.us-west1.run.app/processes';
 
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('DOM Loaded. Initializing Addon with Role Selection (npm package).');
+  console.log('DOM Loaded. Initializing Addon with Role Selection and Timeline.');
 
-  // --- DOM References (same as before) ---
-  const processListElement = document.getElementById('process-list');
+  // --- DOM References ---
   const statusElement = document.getElementById('status');
   const errorElement = document.getElementById('error-message');
   const bodyElement = document.body;
@@ -17,14 +16,31 @@ document.addEventListener('DOMContentLoaded', () => {
   const hostButton = document.getElementById('host-button');
   const guestButton = document.getElementById('guest-button');
   const guestStatusDetail = document.getElementById('guest-status-detail');
+  // Host UI Elements
+  const hostGuestName = document.getElementById('host-guest-name');
+  const hostOverallStatusIcon = document.getElementById('host-overall-status-icon');
+  const hostLastUpdate = document.getElementById('host-last-update');
+  const hostProcessesSection = document.getElementById('host-processes-section');
+  const hostProcessesStatus = document.getElementById('host-processes-status');
+  const hostProcessesList = document.getElementById('host-processes-list');
+  const hostTabsSection = document.getElementById('host-tabs-section');
+  const hostTabsStatus = document.getElementById('host-tabs-status');
+  const hostTabsList = document.getElementById('host-tabs-list');
+  const hostScreenshotSection = document.getElementById('host-screenshot-section');
+  const hostScreenshotStatus = document.getElementById('host-screenshot-status');
+  const hostScreenshotDetails = document.getElementById('host-screenshot-details');
+  const hostTimelineSection = document.getElementById('host-timeline-section'); // New Timeline Section
+  const hostTimelineList = document.getElementById('host-timeline-list'); // New Timeline List UL
 
   // --- State Variables (same as before) ---
   let isHost = false;
   let roleSelected = false;
   let session = null;
   let sidePanelClient = null;
+  let currentGuestData = null; // Store data for the single guest
+  let pollIntervalId = null; // For host polling
 
-  // --- Helper Functions (updateStatus, displayError, updateHostProcessList - same as before) ---
+  // Create the session and side panel client and hold on them.
   async function setUpAddon() {
     if (session == null) {
       session = await meet.addon.createAddonSession({
@@ -36,6 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // --- Helper Functions (updateStatus, displayError, updateHostProcessList - same as before) ---
   function updateStatus(text) {
     statusElement.textContent = `Status: ${text}`;
   }
@@ -50,30 +67,168 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  /** Updates the list displayed by the host */
-  function updateHostProcessList(guestProcessData) {
-    if (!isHost) {
-      console.log("This is in guest mode. Skip displaying process info in the side panel.");
-      return; // Only host updates this list
+  /** Updates the Host dashboard based on currentGuestData */
+  function updateHostDashboard() {
+    if (!isHost || !roleSelected) return;
+
+    if (!currentGuestData) {
+      hostGuestName.textContent = 'Guest: ---';
+      hostOverallStatusIcon.textContent = '⚪';
+      hostOverallStatusIcon.className = 'status-icon unknown';
+      hostLastUpdate.textContent = 'Last Update: Waiting for guest...';
+      // Reset detail sections
+      hostProcessesSection.style.display = 'block'; // Show sections initially
+      hostProcessesStatus.textContent = '---';
+      hostProcessesStatus.className = 'status-text unknown';
+      hostProcessesList.innerHTML = '';
+      hostTabsSection.style.display = 'block';
+      hostTabsStatus.textContent = '---';
+      hostTabsStatus.className = 'status-text unknown';
+      hostTabsList.innerHTML = '';
+      hostScreenshotSection.style.display = 'block';
+      hostScreenshotStatus.textContent = '---';
+      hostScreenshotStatus.className = 'status-text unknown';
+      hostScreenshotDetails.textContent = '';
+      // Reset timeline
+      hostTimelineSection.style.display = 'block';
+      hostTimelineList.innerHTML = '<li><i>Waiting for guest data...</i></li>';
+      return;
     }
 
-    processListElement.innerHTML = ''; // Clear list
+    // Update header
+    hostGuestName.textContent = `Guest: ${currentGuestData.name || 'Unknown'}`;
+    hostLastUpdate.textContent = `Last Update: ${currentGuestData.lastUpdate ? new Date(currentGuestData.lastUpdate).toLocaleTimeString() : 'N/A'}`;
 
-    // Now guestProcessData is expected to be an array of strings
-    if (guestProcessData && guestProcessData.length > 0) {
-        guestProcessData.forEach(processString => {
-            const li = document.createElement('li');
-            li.textContent = processString || '-'; // Display process string or a placeholder
-            processListElement.appendChild(li);
-        });
-        // Update status to show the count
-        updateStatus(`Host mode listening. Displaying ${guestProcessData.length} processes.`);
+    // Determine overall status and update details
+    let overallStatus = 'ok'; // ok, warning, alert
+
+    // --- Process Status ---
+    // **ASSUMPTION**: currentGuestData contains objects like:
+    // processes: { status: 'ok'|'warning'|'alert', details: ['proc1', 'proc2'] }
+    // tabs: { status: 'ok', details: ['url1'] }
+    // screenshots: { status: 'warning', details: 'Possible phone detected' }
+    // timelineEvents: [ { timestamp: 'ISO_string', description: 'Event text' }, ... ]
+    const processInfo = currentGuestData.processes || { status: 'unknown', details: [] };
+    hostProcessesStatus.textContent = processInfo.status.toUpperCase();
+    hostProcessesStatus.className = `status-text ${processInfo.status}`;
+    hostProcessesList.innerHTML = ''; // Clear previous list
+    if (processInfo.status !== 'ok' && processInfo.details.length > 0) {
+      processInfo.details.forEach(proc => { /* ... create and append li ... */ });
+      hostProcessesSection.style.display = 'block';
+      if (processInfo.status === 'alert') overallStatus = 'alert';
+      else if (processInfo.status === 'warning') overallStatus = 'warning';
     } else {
-        // Display a message if the array is empty or not yet populated
-        const li = document.createElement('li');
-        li.textContent = 'Waiting for guest process data...';
-        processListElement.appendChild(li);
-        updateStatus('Host mode listening. Waiting for data...');
+       hostProcessesStatus.textContent = 'OK'; // Explicitly show OK if no details
+       hostProcessesStatus.className = `status-text ok`;
+       // hostProcessesSection.style.display = 'none'; // Optional: Hide section if OK
+    }
+
+    // --- Tabs Status --- (Similar logic)
+    const tabInfo = currentGuestData.tabs || { status: 'unknown', details: [] };
+    hostTabsStatus.textContent = tabInfo.status.toUpperCase();
+    hostTabsStatus.className = `status-text ${tabInfo.status}`;
+    hostTabsList.innerHTML = '';
+     if (tabInfo.status !== 'ok' && tabInfo.details.length > 0) {
+        tabInfo.details.forEach(tab => { /* ... create and append li ... */ });
+        hostTabsSection.style.display = 'block';
+        if (tabInfo.status === 'alert') overallStatus = 'alert';
+        else if (tabInfo.status === 'warning' && overallStatus === 'ok') overallStatus = 'warning';
+     } else {
+        hostTabsStatus.textContent = 'OK';
+        hostTabsStatus.className = `status-text ok`;
+        // hostTabsSection.style.display = 'none'; // Optional: Hide section if OK
+     }
+
+    // --- Screenshot Status --- (Different display)
+    const screenInfo = currentGuestData.screenshots || { status: 'unknown', details: '' };
+    hostScreenshotStatus.textContent = screenInfo.status.toUpperCase();
+    hostScreenshotStatus.className = `status-text ${screenInfo.status}`;
+    hostScreenshotDetails.textContent = '';
+    if (screenInfo.status !== 'ok' && screenInfo.details) {
+        hostScreenshotDetails.textContent = screenInfo.details;
+        hostScreenshotSection.style.display = 'block';
+        if (screenInfo.status === 'alert') overallStatus = 'alert';
+        else if (screenInfo.status === 'warning' && overallStatus === 'ok') overallStatus = 'warning';
+    } else {
+        hostScreenshotStatus.textContent = 'OK';
+        hostScreenshotStatus.className = `status-text ok`;
+        // hostScreenshotSection.style.display = 'none'; // Optional: Hide section if OK
+    }
+
+     // --- NEW: Update Timeline ---
+     hostTimelineList.innerHTML = ''; // Clear previous timeline
+     const events = currentGuestData.timelineEvents || [];
+     if (events.length > 0) {
+         // Sort events if needed (assuming backend doesn't sort) - newest first
+         events.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+         events.forEach(event => {
+             const li = document.createElement('li');
+             const timestampSpan = document.createElement('span');
+             const descriptionSpan = document.createElement('span');
+
+             timestampSpan.className = 'timestamp';
+             // Format timestamp nicely
+             timestampSpan.textContent = `[${new Date(event.timestamp).toLocaleTimeString()}]`;
+
+             descriptionSpan.className = 'description';
+             descriptionSpan.textContent = event.description;
+
+             li.appendChild(timestampSpan);
+             li.appendChild(descriptionSpan);
+             hostTimelineList.appendChild(li);
+         });
+         hostTimelineSection.style.display = 'block';
+     } else {
+         // Optionally hide timeline section if empty, or show placeholder
+         hostTimelineList.innerHTML = '<li><i>No recent events logged.</i></li>';
+         // hostTimelineSection.style.display = 'none';
+     }
+
+
+    // Update overall status icon based on highest severity found
+    let overallIcon = '🟢';
+    let overallIconClass = 'ok';
+    if (overallStatus === 'alert') { overallIcon = '🔴'; overallIconClass = 'alert'; }
+    else if (overallStatus === 'warning') { overallIcon = '🟡'; overallIconClass = 'warning'; }
+    hostOverallStatusIcon.textContent = overallIcon;
+    hostOverallStatusIcon.className = `status-icon ${overallIconClass}`;
+  }
+
+  // --- Function to Fetch Data for Host (Unchanged, but processes new data structure) ---
+  async function fetchHostData() {
+    if (!isHost || !roleSelected) return;
+    console.log('Host fetching data...');
+    updateStatus('Host mode fetching data...');
+    try {
+        const response = await fetch(SERVER_URL, { method: 'GET', mode: 'cors', cache: 'no-cache' });
+        if (!response.ok) { throw new Error(`HTTP error ${response.status}`); }
+        const serverData = await response.json();
+        //TODO(binp: we might want to change this.
+        if (serverData.success && typeof serverData.data === 'object') {
+            console.log('Host received data:', serverData.data);
+            let guestId = null;
+            for (const userId in serverData.data) {
+                if (ownUserInfo && userId !== ownUserInfo.userSessionId) { guestId = userId; break; }
+            }
+            if (guestId) {
+                // **ASSUMPTION**: serverData.data[guestId] now contains:
+                // { name: '..', lastUpdate: '..', processes: { status: '..', details: [] }, tabs: {...}, screenshots: {...}, timelineEvents: [...] }
+                currentGuestData = serverData.data[guestId];
+                console.log('Displaying data for guest:', guestId);
+            } else {
+                console.log('No guest data found in response.');
+                currentGuestData = null;
+            }
+            updateHostDashboard(); // Update UI
+            updateStatus(`Host mode listening. Last fetch: ${new Date().toLocaleTimeString()}`);
+        } else {
+          throw new Error(serverData.error || 'Invalid data format');
+        }
+    } catch (error) {
+      console.error('Error fetching data from server:', error);
+      displayError(`Network error fetching data: ${error.message}`);
+      updateStatus('Network Error (GET)');
     }
   }
 
@@ -107,61 +262,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // HOST: Listen for broadcasts
         // Inside Host logic in startSelectedMode, after setting isHost=true
         // Inside Host logic in startSelectedMode, after setting isHost=true
-        let pollIntervalId = null;
-
-        function fetchGuestData() {
-            console.log('Host fetching data...');
-            fetch(SERVER_URL, {
-                method: 'GET',
-                mode: 'cors',
-                cache: 'no-cache'
-            })
-            .then(response => response.json())
-            // .then(data => {
-            //   // This block executes if the response was OK and JSON parsing succeeded
-            //   console.log('[THEN] Successfully parsed JSON data:', data);
-          
-            //   // --- Now you can use the 'data' object ---
-            //   // Example: Iterate over the process data received (assuming format like the Go server)
-            //   if (typeof data === 'object' && data !== null) {
-            //       console.log('[THEN] Processing received user data:');
-            //       for (const userId in data) {
-            //           const userInfo = data[userId];
-            //           console.log(`  User: ${userInfo.name || userId}`);
-            //           console.log(`  Processes: ${userInfo.processes?.join(', ') || 'None'}`);
-            //           console.log(`  Last Update: ${userInfo.lastUpdate}`);
-            //       }
-            //   } else {
-            //       console.warn('[THEN] Received data is not in the expected object format.');
-            //   }
-            // })          
-            .then(data => {
-                console.log('Received the data: ', data);
-                if (typeof data === 'object' && data !== null) {
-                  for (const userId in data) {
-                    const userInfo = data[userId]
-                    console.log('userId: ', userInfo.userId, 'userName: ', userInfo.userName);
-                    // Clear existing data and repopulate (simpler than merging)
-                    // Or implement merging logic if needed
-                    updateHostProcessList(userInfo.processes); // Update UI
-                    updateStatus(`Host mode listening. Last fetch: ${new Date().toLocaleTimeString()}`);
-                  }
-                } else {
-                    console.error('Server returned error on GET:', data.error);
-                    displayError(`Server error fetching data: ${data.error}`);
-                    updateStatus('Server Error (GET)');
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching data from server:', error);
-                displayError(`Network error fetching data: ${error.message}`);
-                updateStatus('Network Error (GET)');
-            });
-        }
 
         // Start polling
-        fetchGuestData(); // Fetch immediately
-        pollIntervalId = setInterval(fetchGuestData, 15000); // Fetch every 15 seconds (adjust interval as needed)
+        fetchHostData(); // Fetch immediately
+        pollIntervalId = setInterval(fetchHostData, 15000); // Fetch every 15 seconds (adjust interval as needed)
 
       } else {
         // GUEST: Send 'addonOpened' message to the window.top.
@@ -231,36 +335,6 @@ document.addEventListener('DOMContentLoaded', () => {
         updateStatus('Network Error (POST)');
         guestStatusDetail.textContent = 'Error sending process info.';
       });
-
-
-      // I will just send the messaeg.data.
-      // console.log("Going to startActivity now...");
-      // sidePanelClient.startActivity({
-      //   additionalData: JSON.stringify(message.data)
-      // });
-      // console.log("Done with startActivity now. sent the data: ", message.data);
-      // console.log("The addon in guest mode post the data to the backend server.");
-
-      // if (collaboration) {
-      //   // Use cod-doing API instead of collaboration.
-      //   // In the guest mode, this will call coDoingClient.broadcastStateUpdate(bytes).
-      //   const broadcastPayload = { type: 'processUpdate', processes: message.data || [] };
-      //   collaboration.broadcast(broadcastPayload).then(() => {
-      //     console.log('Process info broadcasted successfully.');
-      //     updateStatus(`Process info sent (${broadcastPayload.processes.length}).`);
-      //     guestStatusDetail.textContent = `Process info sent (${broadcastPayload.processes.length}). Waiting for next update...`;
-      //   }).catch(err => {
-      //     console.error('Error broadcasting process info:', err);
-      //     displayError(`Failed to send process info: ${err.message || err}`);
-      //     updateStatus('Broadcast Error');
-      //     guestStatusDetail.textContent = 'Error sending process info.';
-      //   });
-      // } else {
-      //   console.warn('Cannot broadcast: Collaboration session not ready.');
-      //   displayError('Collaboration session not active. Cannot send data.');
-      //   updateStatus('Collaboration Error');
-      //   guestStatusDetail.textContent = 'Collaboration session not active.';
-      // }
     } else if (!isHost && roleSelected && (message?.type === 'daemonError' || message?.type === 'daemonDisconnected')) {
        console.warn('Received daemon status from extension:', message.type, message.data);
        displayError(`Extension reported: ${message.type} ${message.data || ''}`);
@@ -277,7 +351,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // window.addEventListener('unload', () => { /* ... cleanup ... */ });
   // Remember to clear the interval on unload or if mode changes
   window.addEventListener('unload', () => {
-    if (pollIntervalId) clearInterval(pollIntervalId);
+    window.removeEventListener('message', handleMessage);
+    if (pollIntervalId) clearInterval(pollIntervalId);   // Clear polling on unload
   });
 
 

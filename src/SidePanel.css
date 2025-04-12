@@ -1,15 +1,21 @@
-/* SidePanel.css */
+/* src/sidepanel.css */
 body {
-  font-family: sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   margin: 0;
   padding: 10px;
   font-size: 14px;
   background-color: #f8f9fa;
   color: #202124;
+  height: 100vh; /* Ensure full height */
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column; /* Allow container to grow */
 }
 
 .container {
   padding: 5px;
+  flex-grow: 1; /* Allow container to grow */
+  overflow-y: auto; /* Add scroll to container if content overflows */
 }
 
 h4 {
@@ -17,69 +23,87 @@ h4 {
   margin-bottom: 10px;
   font-weight: 500;
   color: #3c4043;
+  display: inline-block;
+}
+h5 {
+    margin-top: 5px;
+    margin-bottom: 5px;
+    font-weight: 500;
+    border-bottom: 1px solid #e8eaed; /* Add border to all H5 */
+    padding-bottom: 5px;
+    margin-bottom: 8px;
 }
 
-#process-list {
-  list-style-type: none;
-  padding: 0;
-  margin-bottom: 15px;
-  max-height: 300px;
-  overflow-y: auto;
-  border: 1px solid #dadce0;
-  border-radius: 4px;
-  background-color: #ffffff;
+/* --- Role Selection (Unchanged) --- */
+#role-selection { text-align: center; padding: 20px 0; border-bottom: 1px solid #dadce0; margin-bottom: 15px; }
+.role-button { padding: 10px 20px; font-size: 1em; cursor: pointer; margin: 0 10px; border: 1px solid #dadce0; border-radius: 4px; background-color: #ffffff; color: #1a73e8; }
+.role-button:hover { background-color: #f8f9fa; }
+.role-button:active { background-color: #e8f0fe; }
+
+/* --- Host Mode Specific --- */
+.guest-header { display: flex; align-items: center; margin-bottom: 5px; }
+.status-icon { font-size: 1.5em; margin-right: 8px; line-height: 1; }
+.status-icon.ok { color: #34a853; } /* Green */
+.status-icon.warning { color: #fbbc04; } /* Yellow */
+.status-icon.alert { color: #ea4335; } /* Red */
+.status-icon.unknown { color: #9aa0a6; } /* Grey */
+
+.subtle-text { font-size: 0.8em; color: #5f6368; margin-bottom: 10px; }
+
+.detail-section { margin-bottom: 15px; padding: 10px; background-color: #fff; border: 1px solid #dadce0; border-radius: 4px; }
+/* Removed bottom border from h5 here, added above */
+
+.status-text { font-weight: normal; font-style: italic; font-size: 0.9em; }
+.status-text.ok { color: #34a853; }
+.status-text.warning { color: #e67c00; }
+.status-text.alert { color: #d93025; }
+
+.details-list { list-style-type: none; padding-left: 5px; margin: 0; font-size: 0.9em; }
+.details-list li { margin-bottom: 4px; word-wrap: break-word; line-height: 1.4; }
+.details-list li b { color: #1a73e8; } /* Guest name styling */
+.details-list li i { color: #5f6368; } /* Placeholder styling */
+
+.details-text { font-size: 0.9em; margin: 0; padding-left: 5px; word-wrap: break-word; line-height: 1.4; }
+
+/* --- Timeline Specific Styles --- */
+#host-timeline-section h5 { margin-bottom: 10px; } /* More space for timeline heading */
+.timeline-list {
+    max-height: 200px; /* Limit height and make scrollable */
+    overflow-y: auto;
+    padding-top: 5px;
+}
+.timeline-list li {
+    padding: 4px 0;
+    border-bottom: 1px dotted #eee; /* Lighter separator for timeline */
+}
+.timeline-list li:last-child {
+    border-bottom: none;
+}
+.timeline-list .timestamp {
+    font-weight: bold;
+    color: #5f6368;
+    margin-right: 8px;
+    font-size: 0.9em;
+}
+.timeline-list .description {
+    /* Style description if needed */
 }
 
-#process-list li {
-  margin: 0;
-  padding: 8px 10px;
-  font-size: 0.9em;
-  word-wrap: break-word;
-  border-bottom: 1px solid #e8eaed;
-}
- #process-list li:last-child {
-     border-bottom: none;
- }
- #process-list li b { /* Style guest name */
-    color: #1a73e8; /* Google blue */
- }
- #process-list li i { /* Style placeholder text */
-     color: #5f6368;
- }
 
+/* --- Status & Error (Unchanged) --- */
+#status { margin-top: 15px; font-style: italic; color: #5f6368; font-size: 0.9em; }
+.error-message { color: #d93025; font-weight: bold; margin-top: 10px; margin-bottom: 10px; padding: 8px; background-color: #fce8e6; border: 1px solid #f4c7c3; border-radius: 4px; }
 
-#status {
-  margin-top: 15px;
-  font-style: italic;
-  color: #5f6368;
-  font-size: 0.9em;
-}
+/* --- Visibility Control (Unchanged) --- */
+.content-section { display: none; }
+body.role-selected #role-selection { display: none; }
+body.host-mode.role-selected .host-only { display: block; }
+body.guest-mode.role-selected .guest-only { display: block; }
 
-.error-message {
-  color: #d93025;
-  font-weight: bold;
-  margin-top: 10px;
-  margin-bottom: 10px;
-  padding: 8px;
-  background-color: #fce8e6;
-  border: 1px solid #f4c7c3;
-  border-radius: 4px;
-}
+/* Optional: Hide detail sections only if status is OK */
+/* .detail-section { display: none; } */
+/* body.host-mode.role-selected .detail-section.status-ok { display: none; } */ /* JS needs to add/remove status-ok class */
+/* body.host-mode.role-selected .detail-section.status-warning,
+body.host-mode.role-selected .detail-section.status-alert,
+body.host-mode.role-selected .detail-section.status-unknown { display: block; } */
 
-/* --- Host/Guest Mode Styling --- */
-
-/* By default, hide mode-specific sections */
-.host-only,
-.guest-only {
-  display: none;
-}
-
-/* Show host section only when body has 'host-mode' class */
-body.host-mode .host-only {
-  display: block;
-}
-
-/* Show guest section only when body has 'guest-mode' class */
-body.guest-mode .guest-only {
-  display: block;
-}

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html>
 <head>
   <base target="_top">
@@ -10,7 +10,7 @@
 </head>
 <body>
   <div class="container">
-    <!--This will create the addon session. Otherwise, the sidaPanel will hanging on.-->
+    < ! --This will create the addon session. Otherwise, the sidaPanel will hanging on. - - >
  
     <div id="role-selection">
         <h4>Select Your Role:</h4>
@@ -34,5 +34,64 @@
     </div>
 
   </div>
+</body>
+</html> -->
+
+
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="sidepanel.css">
+  <title>Proctor Addon</title>
+  </head>
+<body>
+  <div class="container">
+
+    <div id="role-selection">
+        <h4>Select Your Role:</h4>
+        <button id="host-button" class="role-button">Run as Host</button>
+        <button id="guest-button" class="role-button">Run as Guest</button>
+    </div>
+
+    <div id="status">Please select your role above.</div>
+    <div id="error-message" class="error-message" style="display: none;"></div>
+
+    <div class="host-only content-section">
+      <div class="guest-header">
+          <span id="host-overall-status-icon" class="status-icon">⚪</span> <h4 id="host-guest-name">Guest: ---</h4>
+      </div>
+      <div id="host-last-update" class="subtle-text">Last Update: ---</div>
+      <hr>
+      <div class="detail-section" id="host-processes-section">
+          <h5>Processes: <span id="host-processes-status" class="status-text">---</span></h5>
+          <ul id="host-processes-list" class="details-list"></ul>
+      </div>
+      <div class="detail-section" id="host-tabs-section">
+          <h5>Tabs: <span id="host-tabs-status" class="status-text">---</span></h5>
+          <ul id="host-tabs-list" class="details-list"></ul>
+      </div>
+      <div class="detail-section" id="host-screenshot-section">
+          <h5>Screenshots: <span id="host-screenshot-status" class="status-text">---</span></h5>
+          <p id="host-screenshot-details" class="details-text"></p>
+      </div>
+      <div class="detail-section" id="host-timeline-section">
+          <h5>Event Timeline:</h5>
+          <ul id="host-timeline-list" class="details-list timeline-list">
+              <li><i>No events yet...</i></li>
+          </ul>
+      </div>
+      </div>
+
+    <div class="guest-only content-section">
+      <h4>Guest Mode</h4>
+      <p>Your process information will be sent to the host.</p>
+      <p id="guest-status-detail">Waiting for process data from the extension...</p>
+    </div>
+
+  </div>
+  <script src="dist/main.js"></script>
 </body>
 </html>
