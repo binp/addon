@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const roleSelectionDiv = document.getElementById('role-selection');
   const hostButton = document.getElementById('host-button');
   const guestButton = document.getElementById('guest-button');
-  const guestStatusDetail = document.getElementById('guest-status-detail');
+  // const guestStatusDetail = document.getElementById('guest-status-detail');
   // Guest UI Elements
   const guestConnectionStatusDiv = document.getElementById('guest-connection-status'); // New status div
   const extensionLink = document.getElementById('extension-link'); // Link element
@@ -71,6 +71,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  /** Safely formats list items to prevent HTML injection */
+  function createListItem(text) {
+    const li = document.createElement('li');
+    li.textContent = text; // Use textContent for safety
+    return li;
+  }
+
   /** Updates the Host dashboard based on currentGuestData */
   function updateHostDashboard() {
     if (!isHost || !roleSelected) return;
@@ -81,20 +88,9 @@ document.addEventListener('DOMContentLoaded', () => {
       hostOverallStatusIcon.className = 'status-icon unknown';
       hostLastUpdate.textContent = 'Last Update: Waiting for guest...';
       // Reset detail sections
-      hostProcessesSection.style.display = 'block'; // Show sections initially
-      hostProcessesStatus.textContent = '---';
-      hostProcessesStatus.className = 'status-text unknown';
-      hostProcessesList.innerHTML = '';
-      hostTabsSection.style.display = 'block';
-      hostTabsStatus.textContent = '---';
-      hostTabsStatus.className = 'status-text unknown';
-      hostTabsList.innerHTML = '';
-      hostScreenshotSection.style.display = 'block';
-      hostScreenshotStatus.textContent = '---';
-      hostScreenshotStatus.className = 'status-text unknown';
-      hostScreenshotDetails.textContent = '';
-      // Reset timeline
-      hostTimelineSection.style.display = 'block';
+      hostProcessesStatus.textContent = '---'; hostProcessesStatus.className = 'status-text unknown'; hostProcessesList.innerHTML = '';
+      hostTabsStatus.textContent = '---'; hostTabsStatus.className = 'status-text unknown'; hostTabsList.innerHTML = '';
+      hostScreenshotStatus.textContent = '---'; hostScreenshotStatus.className = 'status-text unknown'; hostScreenshotDetails.textContent = '';
       hostTimelineList.innerHTML = '<li><i>Waiting for guest data...</i></li>';
       return;
     }
@@ -108,128 +104,97 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Process Status ---
     // **ASSUMPTION**: currentGuestData contains objects like:
-    // processes: ['proc1', 'proc2']
-    // tabs: ['url1']
-    // screenshots: { status: 'warning', details: 'Possible phone detected' }
-    // timelineEvents: [ { timestamp: 'ISO_string', description: 'Event text' }, ... ]
-    const processList = currentGuestData.processes || []; // Treat as a list
-    let processInfoStatus = 'ok'; // Default to ok
-    if (processList.length > 0) {
-        processInfoStatus = 'warning'; // Set to warning if list is not empty
-    }
-
-    // Update UI based on derived status and the list
-    hostProcessesStatus.textContent = processInfoStatus.toUpperCase();
-    hostProcessesStatus.className = `status-text ${processInfoStatus}`;
+    // processInfo: { status: 'ok'|'warning'|'alert', flaggedProcesses: ['proc1', 'proc2'] }
+    const processInfo = currentGuestData.processInfo || { status: 'unknown', flaggedProcesses: [] };
+    hostProcessesStatus.textContent = processInfo.status.toUpperCase();
+    hostProcessesStatus.className = `status-text ${processInfo.status}`;
     hostProcessesList.innerHTML = ''; // Clear previous list
-
-    if (processInfoStatus !== 'ok') { // If status is 'warning'
-        processList.forEach(proc => {
-             const li = document.createElement('li');
-             // Assuming proc is just a string name based on previous comment
-             li.textContent = proc;
-             hostProcessesList.appendChild(li);
-         });
-        hostProcessesSection.style.display = 'block';
-        // Update overall status based on processInfoStatus
-        if (processInfoStatus === 'alert') overallStatus = 'alert'; // Keep for potential future alerts
-        else if (processInfoStatus === 'warning') overallStatus = 'warning'; // Only 'warning' possible currently
+    if (processInfo.status !== 'ok' && processInfo.flaggedProcesses.length > 0) {
+      processInfo.flaggedProcesses.forEach(proc => hostProcessesList.appendChild(createListItem(proc)));
+      hostProcessesSection.style.display = 'block';
+      if (processInfo.status === 'alert') overallStatus = 'alert';
+      else if (processInfo.status === 'warning') overallStatus = 'warning';
     } else {
-       // Status is 'ok'
        hostProcessesStatus.textContent = 'OK';
        hostProcessesStatus.className = `status-text ok`;
-       hostProcessesList.innerHTML = '<li><i>No flagged processes.</i></li>'; // Provide feedback
+       hostProcessesList.innerHTML = '<li><i>No flagged processes.</i></li>'; // Show OK status
        // hostProcessesSection.style.display = 'none'; // Optional: Hide section if OK
     }
 
-    // --- Tabs Status --- (Similar logic)
-    const tabList = currentGuestData.tabs || []; // Treat as a list
-    let tabInfoStatus = 'ok'; // Default to ok
-    if (tabList.length > 0) {
-        tabInfoStatus = 'warning'; // Set to warning if list is not empty
+    // --- Tabs Status ---
+    // **ASSUMPTION**: currentGuestData.openedTabInfo = { status: 'ok'|'warning', flaggedTabs: ['url1'] }
+    const tabInfo = currentGuestData.openedTabInfo || { status: 'unknown', flaggedTabs: [] };
+    hostTabsStatus.textContent = tabInfo.status.toUpperCase();
+    hostTabsStatus.className = `status-text ${tabInfo.status}`;
+    hostTabsList.innerHTML = '';
+    if (tabInfo.status !== 'ok' && tabInfo.flaggedTabs.length > 0) {
+      tabInfo.flaggedTabs.forEach(tab => hostTabsList.appendChild(createListItem(tab)));
+      hostTabsSection.style.display = 'block';
+      if (tabInfo.status === 'alert') overallStatus = 'alert'; // Assuming tabs can trigger alerts
+      else if (tabInfo.status === 'warning' && overallStatus === 'ok') overallStatus = 'warning';
+    } else {
+      hostTabsStatus.textContent = 'OK';
+      hostTabsStatus.className = `status-text ok`;
+      hostTabsList.innerHTML = '<li><i>No restricted tabs detected.</i></li>';
+      // hostTabsSection.style.display = 'none'; // Optional: Hide section if OK
     }
 
-    // Update UI based on derived status and the list
-    hostTabsStatus.textContent = tabInfoStatus.toUpperCase();
-    hostTabsStatus.className = `status-text ${tabInfoStatus}`;
-    hostTabsList.innerHTML = ''; // Clear previous list
 
-     if (tabInfoStatus !== 'ok') { // If status is 'warning'
-        tabList.forEach(tab => {
-            const li = document.createElement('li');
-             // Assuming tab is just a string (e.g., URL or title)
-             li.textContent = tab;
-             hostTabsList.appendChild(li);
-         });
-        hostTabsSection.style.display = 'block';
-        // Update overall status based on tabInfoStatus
-        if (tabInfoStatus === 'alert') overallStatus = 'alert'; // Keep for potential future alerts
-        else if (tabInfoStatus === 'warning' && overallStatus === 'ok') overallStatus = 'warning'; // Only 'warning' possible
-     } else {
-        // Status is 'ok'
-        hostTabsStatus.textContent = 'OK';
-        hostTabsStatus.className = `status-text ok`;
-        hostTabsList.innerHTML = '<li><i>No flagged tabs.</i></li>'; // Provide feedback
-        // hostTabsSection.style.display = 'none'; // Optional: Hide section if OK
-     }
-
-    // --- Screenshot Status --- (Different display)
-    const screenInfo = currentGuestData.screenshots || { status: 'ok', details: '' };
+    // --- Screenshot Status ---
+    // **ASSUMPTION**: currentGuestData.screenshotInfo = { status: 'ok'|'warning'|'alert', details: '...' }
+    const screenInfo = currentGuestData.screenshotInfo || { status: 'unknown', details: '' };
     hostScreenshotStatus.textContent = screenInfo.status.toUpperCase();
     hostScreenshotStatus.className = `status-text ${screenInfo.status}`;
-    hostScreenshotDetails.textContent = '';
+    hostScreenshotDetails.textContent = ''; // Clear previous details
     if (screenInfo.status !== 'ok' && screenInfo.details) {
-        hostScreenshotDetails.textContent = screenInfo.details;
+        hostScreenshotDetails.textContent = screenInfo.details; // Use textContent for safety
         hostScreenshotSection.style.display = 'block';
         if (screenInfo.status === 'alert') overallStatus = 'alert';
         else if (screenInfo.status === 'warning' && overallStatus === 'ok') overallStatus = 'warning';
     } else {
         hostScreenshotStatus.textContent = 'OK';
         hostScreenshotStatus.className = `status-text ok`;
+        hostScreenshotDetails.textContent = 'No issues detected.';
         // hostScreenshotSection.style.display = 'none'; // Optional: Hide section if OK
     }
 
-     // --- NEW: Update Timeline ---
-     hostTimelineList.innerHTML = ''; // Clear previous timeline
-     const events = currentGuestData.timelineEvents || [];
-     if (events.length > 0) {
-         // Sort events if needed (assuming backend doesn't sort) - newest first
-         events.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-         events.forEach(event => {
-             const li = document.createElement('li');
-             const timestampSpan = document.createElement('span');
-             const descriptionSpan = document.createElement('span');
-
-             timestampSpan.className = 'timestamp';
-             // Format timestamp nicely
-             timestampSpan.textContent = `[${new Date(event.timestamp).toLocaleTimeString()}]`;
-
-             descriptionSpan.className = 'description';
-             descriptionSpan.textContent = event.description;
-
-             li.appendChild(timestampSpan);
-             li.appendChild(descriptionSpan);
-             hostTimelineList.appendChild(li);
-         });
-         hostTimelineSection.style.display = 'block';
-     } else {
-         // Optionally hide timeline section if empty, or show placeholder
-         hostTimelineList.innerHTML = '<li><i>No recent events logged.</i></li>';
-         // hostTimelineSection.style.display = 'none';
-     }
+    // --- Update Timeline ---
+    // **ASSUMPTION**: currentGuestData.timelineEvents = [ { timestamp: 'ISO_string', description: 'Event text' }, ... ]
+    hostTimelineList.innerHTML = ''; // Clear previous timeline
+    const events = currentGuestData.timelineEvents || [];
+    if (events.length > 0) {
+        // Sort events newest first (assuming backend doesn't)
+        events.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        // Limit number of events shown? e.g., events.slice(0, 20)
+        events.forEach(event => {
+            const li = document.createElement('li');
+            const timestampSpan = document.createElement('span');
+            const descriptionSpan = document.createElement('span');
+            timestampSpan.className = 'timestamp';
+            timestampSpan.textContent = `[${new Date(event.timestamp).toLocaleTimeString()}]`;
+            descriptionSpan.className = 'description';
+            descriptionSpan.textContent = event.description; // Use textContent
+            li.appendChild(timestampSpan);
+            li.appendChild(descriptionSpan);
+            hostTimelineList.appendChild(li);
+        });
+        hostTimelineSection.style.display = 'block';
+    } else {
+        hostTimelineList.innerHTML = '<li><i>No recent events logged.</i></li>';
+    }
 
 
     // Update overall status icon based on highest severity found
-    let overallIcon = '🟢';
-    let overallIconClass = 'ok';
+    // Update overall status icon
+    let overallIcon = '🟢'; let overallIconClass = 'ok';
     if (overallStatus === 'alert') { overallIcon = '🔴'; overallIconClass = 'alert'; }
     else if (overallStatus === 'warning') { overallIcon = '🟡'; overallIconClass = 'warning'; }
     hostOverallStatusIcon.textContent = overallIcon;
     hostOverallStatusIcon.className = `status-icon ${overallIconClass}`;
   }
 
-  // --- Function to Fetch Data for Host (Unchanged, but processes new data structure) ---
+  // --- Function to Fetch Data for Host ---
   async function fetchHostData() {
     if (!isHost || !roleSelected) return;
     console.log('Host fetching data...');
@@ -319,7 +284,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // --- Message Handler (for communication FROM Content Script TO Addon - same logic) ---
+  // --- Message Handler (for communication FROM Content Script TO Addon) ---
   function handleMessage(event) {
     const expectedOrigin = 'https://meet.google.com';
     if (event.origin !== expectedOrigin) { return; }
@@ -330,12 +295,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // GUESTS process messages from the extension
     if (!isHost && roleSelected && message?.type === 'processUpdate') {
       console.log('Guest received process update from extension:', message.data);
-      // guestStatusDetail.textContent = `Sending process info (${message.data?.length || 0})...`;
-      // displayError(null);
       // Update connection status
       guestConnectionStatusDiv.textContent = `Status: Connected (Last update: ${new Date().toLocaleTimeString()})`;
       updateStatus(`Process info received (${message.data?.length || 0}). Sending to server...`);
-
 
       // Inside Guest logic, when processes are received from extension
       const payload = {
@@ -391,7 +353,6 @@ document.addEventListener('DOMContentLoaded', () => {
     window.removeEventListener('message', handleMessage);
     if (pollIntervalId) clearInterval(pollIntervalId);   // Clear polling on unload
   });
-
 
 }); // End DOMContentLoaded listener
 
