@@ -16,6 +16,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const hostButton = document.getElementById('host-button');
   const guestButton = document.getElementById('guest-button');
   const guestStatusDetail = document.getElementById('guest-status-detail');
+  // Guest UI Elements
+  const guestConnectionStatusDiv = document.getElementById('guest-connection-status'); // New status div
+  const extensionLink = document.getElementById('extension-link'); // Link element
+  const daemonLink = document.getElementById('daemon-link'); // Link element
   // Host UI Elements
   const hostGuestName = document.getElementById('host-guest-name');
   const hostOverallStatusIcon = document.getElementById('host-overall-status-icon');
@@ -326,8 +330,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // GUESTS process messages from the extension
     if (!isHost && roleSelected && message?.type === 'processUpdate') {
       console.log('Guest received process update from extension:', message.data);
-      guestStatusDetail.textContent = `Sending process info (${message.data?.length || 0})...`;
-      displayError(null);
+      // guestStatusDetail.textContent = `Sending process info (${message.data?.length || 0})...`;
+      // displayError(null);
+      // Update connection status
+      guestConnectionStatusDiv.textContent = `Status: Connected (Last update: ${new Date().toLocaleTimeString()})`;
+      updateStatus(`Process info received (${message.data?.length || 0}). Sending to server...`);
 
 
       // Inside Guest logic, when processes are received from extension
@@ -355,21 +362,21 @@ document.addEventListener('DOMContentLoaded', () => {
             guestStatusDetail.textContent = `Process info sent (${payload.processes.length}). Waiting for next update...`;
         } else {
             console.error('Server returned error:', data.error);
-            displayError(`Server error: ${data.error}`);
+            guestConnectionStatusDiv.textContent = `Status: Error sending data! ${data.error}`;
             updateStatus('Server Error (POST)');
         }
       })
       .catch(error => {
         console.error('Error POSTing data to server:', error);
-        displayError(`Network error sending data: ${error.message}`);
+        // displayError(`Network error sending data: ${error.message}`);
         updateStatus('Network Error (POST)');
-        guestStatusDetail.textContent = 'Error sending process info.';
+        guestConnectionStatusDiv.textContent = 'Error sending process info.';
       });
     } else if (!isHost && roleSelected && (message?.type === 'daemonError' || message?.type === 'daemonDisconnected')) {
        console.warn('Received daemon status from extension:', message.type, message.data);
-       displayError(`Extension reported: ${message.type} ${message.data || ''}`);
+       // displayError(`Extension reported: ${message.type} ${message.data || ''}`);
        updateStatus('Extension Error');
-       guestStatusDetail.textContent = `Extension reported an error: ${message.type}.`;
+       guestConnectionStatusDiv.textContent = `Extension reported an error: ${message.type}.`;
     }
   }
 
