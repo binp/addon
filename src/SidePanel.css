@@ -72,8 +72,7 @@ h5 {
 }
 
 /* Hide guest header and last update within host view by default */
-.host-only .guest-header,
-.host-only #host-last-update {
+#host-last-update {
     display: none;
 }
 
