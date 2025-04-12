@@ -42,16 +42,16 @@ h5 {
 /* --- Role Selection --- */
 #role-selection {
   text-align: center;
-  padding: 20px 0;
+  padding: 15px 0;
   border-bottom: 1px solid #dadce0; /* Separator */
   margin-bottom: 15px;
 }
 
 .role-button {
-  padding: 10px 20px;
-  font-size: 1em;
+  padding: 8px 15px; /* Reduced padding */
+  font-size: 0.9em; /* Reduced font size */
   cursor: pointer;
-  margin: 0 10px; /* Space between buttons */
+  margin: 0 5px; /* Space between buttons */
   border: 1px solid #dadce0; /* Subtle border */
   border-radius: 4px;
   background-color: #ffffff; /* White background */
@@ -70,6 +70,13 @@ h5 {
     align-items: center; /* Align icon and text vertically */
     margin-bottom: 5px;
 }
+
+/* Hide guest header and last update within host view by default */
+.host-only .guest-header,
+.host-only #host-last-update {
+    display: none;
+}
+
 .status-icon {
     font-size: 1.5em; /* Make icon larger */
     margin-right: 8px;
