@@ -339,8 +339,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Inside Guest logic, when processes are received from extension
       const payload = {
-        userId: meet.addon.meetingId,  // No way to get the real user ID.
-        userName: meet.addon.meetingCode,  // No way to get the user name.
+        userId: 'binp000001',  // No way to get the real user ID.
+        userName: 'Binbin Peng',  // No way to get the user name.
         processes: message.data || [] // Assuming message.data has the process list
       };
 
