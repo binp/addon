@@ -251,7 +251,9 @@ document.addEventListener('DOMContentLoaded', () => {
       // updateStatus(isHost ? 'Host mode listening.' : 'Guest mode ready to send.');
 
       if (isHost) {
-        sidePanelClient.startActivity();
+        sidePanelClient.startActivity({
+          sidePanelUrl: "https://binp.github.io/addon/src/SidePanel.html"
+        });
         // HOST: Listen for broadcasts
         // Inside Host logic in startSelectedMode, after setting isHost=true
         // Inside Host logic in startSelectedMode, after setting isHost=true
