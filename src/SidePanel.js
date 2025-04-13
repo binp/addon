@@ -303,7 +303,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const payload = {
         userId: 'binp000001',  // No way to get the real user ID.
         userName: 'Binbin Peng',  // No way to get the user name.
-        processes: message.data || [] // Assuming message.data has the process list
+        processes: message.data || {} // Assuming message.data is empty json.
       };
 
       fetch(SERVER_URL, {
