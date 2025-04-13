@@ -293,7 +293,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('Addon received message from parent window:', message);
 
     // GUESTS process messages from the extension
-    if (!isHost && roleSelected && message?.type === 'processUpdate') {
+    if (!isHost && roleSelected && message?.type === 'proctorUpdate') {
       console.log('Guest received process update from extension:', message.data);
       // Update connection status
       guestConnectionStatusDiv.textContent = `Status: Connected (Last update: ${new Date().toLocaleTimeString()})`;
