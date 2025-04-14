@@ -296,16 +296,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // GUESTS process messages from the extension
     if (!isHost && roleSelected && message?.type === 'proctorUpdate') {
-      console.log('Guest received process update from extension:', message.data);
+      console.log('Guest received process update from extension:', message.payload);
       // Update connection status
       guestConnectionStatusDiv.textContent = `Status: Connected (Last update: ${new Date().toLocaleTimeString()})`;
-      updateStatus(`Process info received (${message.data?.length || 0}). Sending to server...`);
+      updateStatus(`Process info received (${message.payload?.length || 0}). Sending to server...`);
 
       // Inside Guest logic, when processes are received from extension
       const payload = {
         userId: 'binp000001',  // No way to get the real user ID.
         userName: 'Binbin Peng',  // No way to get the user name.
-        processes: message.data || {} // Assuming message.data is empty json.
+        processes: message.payload || {} // Assuming message.payload is empty json.
       };
       console.log('Send the payload to the backend server: (${payload})')
 
