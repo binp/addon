@@ -307,6 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
         userName: 'Binbin Peng',  // No way to get the user name.
         processes: message.data || {} // Assuming message.data is empty json.
       };
+      console.log('Send the payload to the backend server: (${payload})')
 
       fetch(SERVER_URL, {
         method: 'POST',
@@ -323,7 +324,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (data.success) {
             console.log('Successfully POSTed data to server:', data);
             updateStatus(`Process info sent (${payload.processes.length}).`);
-            guestStatusDetail.textContent = `Process info sent (${payload.processes.length}). Waiting for next update...`;
+            guestConnectionStatusDiv.textContent = `Process info sent (${payload.processes.length}). Waiting for next update...`;
         } else {
             console.error('Server returned error:', data.error);
             guestConnectionStatusDiv.textContent = `Status: Error sending data! ${data.error}`;
