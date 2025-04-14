@@ -106,6 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // **ASSUMPTION**: currentGuestData contains objects like:
     // processInfo: { status: 'ok'|'warning'|'alert', flaggedProcesses: ['proc1', 'proc2'] }
     const processInfo = currentGuestData.processes.processInfo || { status: 'unknown', flaggedProcesses: [] };
+    console.log("Got the processInfo: ", processInfo)
     hostProcessesStatus.textContent = processInfo.status.toUpperCase();
     hostProcessesStatus.className = `status-text ${processInfo.status}`;
     hostProcessesList.innerHTML = ''; // Clear previous list
