@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Update header
-    hostGuestName.textContent = `Guest: ${currentGuestData.name || 'Unknown'}`;
+    hostGuestName.textContent = `Guest: ${currentGuestData.userName || 'Unknown'}`;
     hostLastUpdate.textContent = `Last Update: ${currentGuestData.lastUpdate ? new Date(currentGuestData.lastUpdate).toLocaleTimeString() : 'N/A'}`;
 
     // Determine overall status and update details
@@ -105,7 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Process Status ---
     // **ASSUMPTION**: currentGuestData contains objects like:
     // processInfo: { status: 'ok'|'warning'|'alert', flaggedProcesses: ['proc1', 'proc2'] }
-    const processInfo = currentGuestData.processInfo || { status: 'unknown', flaggedProcesses: [] };
+    const processInfo = currentGuestData.processes.processInfo || { status: 'unknown', flaggedProcesses: [] };
     hostProcessesStatus.textContent = processInfo.status.toUpperCase();
     hostProcessesStatus.className = `status-text ${processInfo.status}`;
     hostProcessesList.innerHTML = ''; // Clear previous list
@@ -123,7 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Tabs Status ---
     // **ASSUMPTION**: currentGuestData.openedTabInfo = { status: 'ok'|'warning', flaggedTabs: ['url1'] }
-    const tabInfo = currentGuestData.openedTabInfo || { status: 'unknown', flaggedTabs: [] };
+    const tabInfo = currentGuestData.processes.openedTabInfo || { status: 'unknown', flaggedTabs: [] };
     hostTabsStatus.textContent = tabInfo.status.toUpperCase();
     hostTabsStatus.className = `status-text ${tabInfo.status}`;
     hostTabsList.innerHTML = '';
@@ -142,7 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Screenshot Status ---
     // **ASSUMPTION**: currentGuestData.screenshotInfo = { status: 'ok'|'warning'|'alert', details: '...' }
-    const screenInfo = currentGuestData.screenshotInfo || { status: 'unknown', details: '' };
+    const screenInfo = currentGuestData.processes.screenshotInfo || { status: 'unknown', details: '' };
     hostScreenshotStatus.textContent = screenInfo.status.toUpperCase();
     hostScreenshotStatus.className = `status-text ${screenInfo.status}`;
     hostScreenshotDetails.textContent = ''; // Clear previous details
@@ -162,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Update Timeline ---
     // **ASSUMPTION**: currentGuestData.timelineEvents = [ { timestamp: 'ISO_string', description: 'Event text' }, ... ]
     hostTimelineList.innerHTML = ''; // Clear previous timeline
-    const events = currentGuestData.timelineEvents || [];
+    const events = currentGuestData.processes.timelineEvents || [];
     if (events.length > 0) {
         // Sort events newest first (assuming backend doesn't)
         events.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
