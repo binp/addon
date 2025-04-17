@@ -41,21 +41,25 @@ h5 {
 
 /* --- Role Selection --- */
 #role-selection {
-  text-align: center;
   padding: 15px 0;
-  border-bottom: 1px solid #dadce0; /* Separator */
-  margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-grow: 1;
+  gap: 10px;
 }
 
 .role-button {
-  padding: 8px 15px; /* Reduced padding */
-  font-size: 0.9em; /* Reduced font size */
+  padding: 8px 15px;
+  font-size: 0.9em;
   cursor: pointer;
-  margin: 0 5px; /* Space between buttons */
-  border: 1px solid #dadce0; /* Subtle border */
+  border: 1px solid #dadce0;
   border-radius: 4px;
-  background-color: #ffffff; /* White background */
-  color: #1a73e8; /* Google blue text */
+  background-color: #ffffff;
+  color: #1a73e8;
+  width: 150px;
+  box-sizing: border-box;
 }
 .role-button:hover {
     background-color: #f8f9fa; /* Light grey on hover */
