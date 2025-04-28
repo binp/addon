@@ -302,13 +302,14 @@ document.addEventListener('DOMContentLoaded', () => {
       guestConnectionStatusDiv.textContent = `Status: Connected (Last update: ${new Date().toLocaleTimeString()})`;
       updateStatus(`Process info received (${message.payload?.length || 0}). Sending to server...`);
 
-      // TODO(binp): Get the meeting ID and code for this meeting.
       // TODO(binp): Figure out how to get the user name and user ID.
       // Inside Guest logic, when processes are received from extension
       guestInfo = message.payload
       guestInfo.guestId = "binp000001"
       guestInfo.guestName = "Binbin Peng"
-      console.log('Send the payload to the backend server: (${guestInof})')
+      guestInfo.meetingId = meet.addon.meetingId
+      guestInfo.meetingCode = meet.addon.meetingCode
+      console.log('Send the payload to the backend server: (${guestInfo})')
 
       fetch(SERVER_URL, {
         method: 'POST',
