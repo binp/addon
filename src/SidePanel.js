@@ -304,7 +304,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // TODO(binp): Figure out how to get the user name and user ID.
       // Inside Guest logic, when processes are received from extension
-      guestInfo = message.payload
+      const guestInfo = message.payload
       guestInfo.guestId = "binp000001"
       guestInfo.guestName = "Binbin Peng"
       guestInfo.meetingId = meet.addon.meetingId
