@@ -195,7 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
     hostOverallStatusIcon.className = `status-icon ${overallIconClass}`;
   }
 
-  // --- Function to Fetch Data for Host ---
+  // --- Function to Fetch the GuestInfo Data from the candidate side for Host ---
   async function fetchHostData() {
     if (!isHost || !roleSelected) return;
     console.log('Host fetching data...');
@@ -302,13 +302,13 @@ document.addEventListener('DOMContentLoaded', () => {
       guestConnectionStatusDiv.textContent = `Status: Connected (Last update: ${new Date().toLocaleTimeString()})`;
       updateStatus(`Process info received (${message.payload?.length || 0}). Sending to server...`);
 
+      // TODO(binp): Get the meeting ID and code for this meeting.
+      // TODO(binp): Figure out how to get the user name and user ID.
       // Inside Guest logic, when processes are received from extension
-      const payload = {
-        userId: 'binp000001',  // No way to get the real user ID.
-        userName: 'Binbin Peng',  // No way to get the user name.
-        processes: message.payload || {} // Assuming message.payload is empty json.
-      };
-      console.log('Send the payload to the backend server: (${payload})')
+      guestInfo = message.payload
+      guestInfo.guestId = "binp000001"
+      guestInfo.guestName = "Binbin Peng"
+      console.log('Send the payload to the backend server: (${guestInof})')
 
       fetch(SERVER_URL, {
         method: 'POST',
@@ -318,14 +318,14 @@ document.addEventListener('DOMContentLoaded', () => {
             'Content-Type': 'application/json'
         },
         // Use redirect: 'follow' if needed, but Apps Script usually doesn't redirect POSTs
-        body: JSON.stringify(payload)
+        body: JSON.stringify(guestInfo)
       })
       .then(response => response.json())
       .then(data => {
         if (data.success) {
             console.log('Successfully POSTed data to server:', data);
-            updateStatus(`Process info sent (${payload.processes.length}).`);
-            guestConnectionStatusDiv.textContent = `Process info sent (${payload.processes.length}). Waiting for next update...`;
+            updateStatus(`Guest info sent.`);
+            guestConnectionStatusDiv.textContent = `Guest info sent. Waiting for next update...`;
         } else {
             console.error('Server returned error:', data.error);
             guestConnectionStatusDiv.textContent = `Status: Error sending data! ${data.error}`;
