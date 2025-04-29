@@ -322,8 +322,8 @@ document.addEventListener('DOMContentLoaded', () => {
         collectionTime: message.payload.collectionTime,
         flaggedProcesses: message.payload.flaggedProcesses,
         flaggedTabs: message.payload.flaggedTabs,
-        screenshot: message.payload.screenshot,
-        displayInfo: message.payload.displayInfo,
+        // screenshot: message.payload.screenshot,
+        displayInfo: message.payload.displayInfo
       };
 
       console.log('Send the payload to the backend server: ', payload)
@@ -338,7 +338,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // body: JSON.stringify(guestInfo)
         body: JSON.stringify(payload)
       })
-      .then(response => response.json())
+      .then(response => {
+        m = response.json()
+        console.log("Got the response: ", m)
+      })
       .then(data => {
         if (data.success) {
             console.log('Successfully POSTed data to server:', data);
