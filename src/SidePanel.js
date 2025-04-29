@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
       sidePanelClient = await session.createSidePanelClient();
     }
     if (meetingInfo == null) {
-      meetingInfo = sidePanelClient.getMeetingInfo();
+      meetingInfo = await sidePanelClient.getMeetingInfo();
       console.log('Meeting info:', meetingInfo);
       console.log('meegintId: ', meetingInfo.meetingId, " meetingCode: ", meetingInfo.meetingCode);
     }
