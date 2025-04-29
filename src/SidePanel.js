@@ -82,10 +82,128 @@ document.addEventListener('DOMContentLoaded', () => {
     return li;
   }
 
-  /** Updates the Host dashboard based on currentGuestData */
+  // /** Updates the Host dashboard based on currentGuestData */
+  // function updateHostDashboard() {
+  //   if (!isHost || !roleSelected) return;
+
+  //   if (!currentGuestData) {
+  //     hostGuestName.textContent = 'Guest: ---';
+  //     hostOverallStatusIcon.textContent = '⚪';
+  //     hostOverallStatusIcon.className = 'status-icon unknown';
+  //     hostLastUpdate.textContent = 'Last Update: Waiting for guest...';
+  //     // Reset detail sections
+  //     hostProcessesStatus.textContent = '---'; hostProcessesStatus.className = 'status-text unknown'; hostProcessesList.innerHTML = '';
+  //     hostTabsStatus.textContent = '---'; hostTabsStatus.className = 'status-text unknown'; hostTabsList.innerHTML = '';
+  //     hostScreenshotStatus.textContent = '---'; hostScreenshotStatus.className = 'status-text unknown'; hostScreenshotDetails.textContent = '';
+  //     hostTimelineList.innerHTML = '<li><i>Waiting for guest data...</i></li>';
+  //     return;
+  //   }
+
+  //   // Update header
+  //   hostGuestName.textContent = `Guest: ${currentGuestData.userName || 'Unknown'}`;
+  //   hostLastUpdate.textContent = `Last Update: ${currentGuestData.lastUpdate ? new Date(currentGuestData.lastUpdate).toLocaleTimeString() : 'N/A'}`;
+
+  //   // Determine overall status and update details
+  //   let overallStatus = 'ok'; // ok, warning, alert
+
+  //   // --- Process Status ---
+  //   // **ASSUMPTION**: currentGuestData contains objects like:
+  //   // processInfo: { status: 'ok'|'warning'|'alert', flaggedProcesses: ['proc1', 'proc2'] }
+  //   const processInfo = currentGuestData.processes.processInfo || { status: 'unknown', flaggedProcesses: [] };
+  //   console.log("Got the processInfo: ", processInfo)
+  //   hostProcessesStatus.textContent = processInfo.status.toUpperCase();
+  //   hostProcessesStatus.className = `status-text ${processInfo.status}`;
+  //   hostProcessesList.innerHTML = ''; // Clear previous list
+  //   if (processInfo.status !== 'ok' && processInfo.flaggedProcesses.length > 0) {
+  //     processInfo.flaggedProcesses.forEach(proc => hostProcessesList.appendChild(createListItem(proc)));
+  //     hostProcessesSection.style.display = 'block';
+  //     if (processInfo.status === 'alert') overallStatus = 'alert';
+  //     else if (processInfo.status === 'warning') overallStatus = 'warning';
+  //   } else {
+  //      hostProcessesStatus.textContent = 'OK';
+  //      hostProcessesStatus.className = `status-text ok`;
+  //      hostProcessesList.innerHTML = '<li><i>No flagged processes.</i></li>'; // Show OK status
+  //      // hostProcessesSection.style.display = 'none'; // Optional: Hide section if OK
+  //   }
+
+  //   // --- Tabs Status ---
+  //   // **ASSUMPTION**: currentGuestData.openedTabInfo = { status: 'ok'|'warning', flaggedTabs: ['url1'] }
+  //   const tabInfo = currentGuestData.processes.openedTabInfo || { status: 'unknown', flaggedTabs: [] };
+  //   hostTabsStatus.textContent = tabInfo.status.toUpperCase();
+  //   hostTabsStatus.className = `status-text ${tabInfo.status}`;
+  //   hostTabsList.innerHTML = '';
+  //   if (tabInfo.status !== 'ok' && tabInfo.flaggedTabs.length > 0) {
+  //     tabInfo.flaggedTabs.forEach(tab => hostTabsList.appendChild(createListItem(tab)));
+  //     hostTabsSection.style.display = 'block';
+  //     if (tabInfo.status === 'alert') overallStatus = 'alert'; // Assuming tabs can trigger alerts
+  //     else if (tabInfo.status === 'warning' && overallStatus === 'ok') overallStatus = 'warning';
+  //   } else {
+  //     hostTabsStatus.textContent = 'OK';
+  //     hostTabsStatus.className = `status-text ok`;
+  //     hostTabsList.innerHTML = '<li><i>No restricted tabs detected.</i></li>';
+  //     // hostTabsSection.style.display = 'none'; // Optional: Hide section if OK
+  //   }
+
+
+  //   // --- Screenshot Status ---
+  //   // **ASSUMPTION**: currentGuestData.screenshotInfo = { status: 'ok'|'warning'|'alert', details: '...' }
+  //   const screenInfo = currentGuestData.processes.screenshotInfo || { status: 'unknown', details: '' };
+  //   hostScreenshotStatus.textContent = screenInfo.status.toUpperCase();
+  //   hostScreenshotStatus.className = `status-text ${screenInfo.status}`;
+  //   hostScreenshotDetails.textContent = ''; // Clear previous details
+  //   if (screenInfo.status !== 'ok' && screenInfo.details) {
+  //       hostScreenshotDetails.textContent = screenInfo.details; // Use textContent for safety
+  //       hostScreenshotSection.style.display = 'block';
+  //       if (screenInfo.status === 'alert') overallStatus = 'alert';
+  //       else if (screenInfo.status === 'warning' && overallStatus === 'ok') overallStatus = 'warning';
+  //   } else {
+  //       hostScreenshotStatus.textContent = 'OK';
+  //       hostScreenshotStatus.className = `status-text ok`;
+  //       hostScreenshotDetails.textContent = 'No issues detected.';
+  //       // hostScreenshotSection.style.display = 'none'; // Optional: Hide section if OK
+  //   }
+
+
+  //   // --- Update Timeline ---
+  //   // **ASSUMPTION**: currentGuestData.timelineEvents = [ { timestamp: 'ISO_string', description: 'Event text' }, ... ]
+  //   hostTimelineList.innerHTML = ''; // Clear previous timeline
+  //   const events = currentGuestData.processes.timelineEvents || [];
+  //   if (events.length > 0) {
+  //       // Sort events newest first (assuming backend doesn't)
+  //       events.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  //       // Limit number of events shown? e.g., events.slice(0, 20)
+  //       events.forEach(event => {
+  //           const li = document.createElement('li');
+  //           const timestampSpan = document.createElement('span');
+  //           const descriptionSpan = document.createElement('span');
+  //           timestampSpan.className = 'timestamp';
+  //           timestampSpan.textContent = `[${new Date(event.timestamp).toLocaleTimeString()}]`;
+  //           descriptionSpan.className = 'description';
+  //           descriptionSpan.textContent = event.description; // Use textContent
+  //           li.appendChild(timestampSpan);
+  //           li.appendChild(descriptionSpan);
+  //           hostTimelineList.appendChild(li);
+  //       });
+  //       hostTimelineSection.style.display = 'block';
+  //   } else {
+  //       hostTimelineList.innerHTML = '<li><i>No recent events logged.</i></li>';
+  //   }
+
+
+  //   // Update overall status icon based on highest severity found
+  //   // Update overall status icon
+  //   let overallIcon = '🟢'; let overallIconClass = 'ok';
+  //   if (overallStatus === 'alert') { overallIcon = '🔴'; overallIconClass = 'alert'; }
+  //   else if (overallStatus === 'warning') { overallIcon = '🟡'; overallIconClass = 'warning'; }
+  //   hostOverallStatusIcon.textContent = overallIcon;
+  //   hostOverallStatusIcon.className = `status-icon ${overallIconClass}`;
+  // }
+
+  /** Updates the Host dashboard based on currentGuestData (GuestInfo format) */
   function updateHostDashboard() {
     if (!isHost || !roleSelected) return;
 
+    // --- Reset UI if no data ---
     if (!currentGuestData) {
       hostGuestName.textContent = 'Guest: ---';
       hostOverallStatusIcon.textContent = '⚪';
@@ -96,105 +214,142 @@ document.addEventListener('DOMContentLoaded', () => {
       hostTabsStatus.textContent = '---'; hostTabsStatus.className = 'status-text unknown'; hostTabsList.innerHTML = '';
       hostScreenshotStatus.textContent = '---'; hostScreenshotStatus.className = 'status-text unknown'; hostScreenshotDetails.textContent = '';
       hostTimelineList.innerHTML = '<li><i>Waiting for guest data...</i></li>';
+      // Ensure sections are hidden initially or when data is cleared
+      hostProcessesSection.style.display = 'none';
+      hostTabsSection.style.display = 'none';
+      hostScreenshotSection.style.display = 'none';
+      hostTimelineSection.style.display = 'none';
       return;
     }
 
-    // Update header
-    hostGuestName.textContent = `Guest: ${currentGuestData.userName || 'Unknown'}`;
-    hostLastUpdate.textContent = `Last Update: ${currentGuestData.lastUpdate ? new Date(currentGuestData.lastUpdate).toLocaleTimeString() : 'N/A'}`;
+    // --- Update Header ---
+    // Use guestName and collectionTime from GuestInfo
+    hostGuestName.textContent = `Guest: ${currentGuestData.guestName || 'Unknown'}`;
+    hostLastUpdate.textContent = `Last Update: ${currentGuestData.collectionTime ? new Date(currentGuestData.collectionTime).toLocaleString() : 'N/A'}`; // Use toLocaleString for date+time
 
-    // Determine overall status and update details
+    // --- Determine Overall Status ---
+    // Start with 'ok', escalate based on findings.
+    // Consider the daemon's reported status and error first.
     let overallStatus = 'ok'; // ok, warning, alert
+    let overallIcon = '🟢';
+    let overallIconClass = 'ok';
+
+    if (currentGuestData.error) {
+        overallStatus = 'alert'; // Daemon reported an error
+        displayError(`Guest Daemon Error: ${currentGuestData.error}`); // Show daemon error prominently
+    } else if (currentGuestData.status && currentGuestData.status !== 'ok' && currentGuestData.status !== 'success') {
+        // If daemon status is something other than ok/success, treat as warning (adjust as needed)
+        overallStatus = 'warning';
+        displayError(null); // Clear previous error if status is just a warning now
+    } else {
+        displayError(null); // Clear error message if status is ok
+    }
+
 
     // --- Process Status ---
-    // **ASSUMPTION**: currentGuestData contains objects like:
-    // processInfo: { status: 'ok'|'warning'|'alert', flaggedProcesses: ['proc1', 'proc2'] }
-    const processInfo = currentGuestData.processes.processInfo || { status: 'unknown', flaggedProcesses: [] };
-    console.log("Got the processInfo: ", processInfo)
-    hostProcessesStatus.textContent = processInfo.status.toUpperCase();
-    hostProcessesStatus.className = `status-text ${processInfo.status}`;
+    const flaggedProcesses = currentGuestData.flaggedProcesses || [];
     hostProcessesList.innerHTML = ''; // Clear previous list
-    if (processInfo.status !== 'ok' && processInfo.flaggedProcesses.length > 0) {
-      processInfo.flaggedProcesses.forEach(proc => hostProcessesList.appendChild(createListItem(proc)));
+    if (flaggedProcesses.length > 0) {
+      hostProcessesStatus.textContent = 'FLAGGED';
+      hostProcessesStatus.className = 'status-text warning'; // Treat flagged processes as warning
+      flaggedProcesses.forEach(proc => {
+          const detail = `${proc.processName} (PID: ${proc.pid || 'N/A'})${proc.title ? ` - ${proc.title}` : ''}`;
+          hostProcessesList.appendChild(createListItem(detail));
+      });
       hostProcessesSection.style.display = 'block';
-      if (processInfo.status === 'alert') overallStatus = 'alert';
-      else if (processInfo.status === 'warning') overallStatus = 'warning';
+      if (overallStatus === 'ok') overallStatus = 'warning'; // Escalate overall status if needed
     } else {
        hostProcessesStatus.textContent = 'OK';
-       hostProcessesStatus.className = `status-text ok`;
-       hostProcessesList.innerHTML = '<li><i>No flagged processes.</i></li>'; // Show OK status
-       // hostProcessesSection.style.display = 'none'; // Optional: Hide section if OK
+       hostProcessesStatus.className = 'status-text ok';
+       hostProcessesList.innerHTML = '<li><i>No flagged processes.</i></li>';
+       hostProcessesSection.style.display = 'block'; // Keep section visible even if OK
     }
 
     // --- Tabs Status ---
-    // **ASSUMPTION**: currentGuestData.openedTabInfo = { status: 'ok'|'warning', flaggedTabs: ['url1'] }
-    const tabInfo = currentGuestData.processes.openedTabInfo || { status: 'unknown', flaggedTabs: [] };
-    hostTabsStatus.textContent = tabInfo.status.toUpperCase();
-    hostTabsStatus.className = `status-text ${tabInfo.status}`;
-    hostTabsList.innerHTML = '';
-    if (tabInfo.status !== 'ok' && tabInfo.flaggedTabs.length > 0) {
-      tabInfo.flaggedTabs.forEach(tab => hostTabsList.appendChild(createListItem(tab)));
+    const flaggedTabs = currentGuestData.flaggedTabs || [];
+    hostTabsList.innerHTML = ''; // Clear previous list
+    if (flaggedTabs.length > 0) {
+      hostTabsStatus.textContent = 'FLAGGED';
+      hostTabsStatus.className = 'status-text warning'; // Treat flagged tabs as warning
+      flaggedTabs.forEach(tab => {
+          const detail = `${tab.title || 'Untitled Tab'} - ${tab.url || 'N/A'}`;
+          hostTabsList.appendChild(createListItem(detail));
+      });
       hostTabsSection.style.display = 'block';
-      if (tabInfo.status === 'alert') overallStatus = 'alert'; // Assuming tabs can trigger alerts
-      else if (tabInfo.status === 'warning' && overallStatus === 'ok') overallStatus = 'warning';
+      if (overallStatus === 'ok') overallStatus = 'warning'; // Escalate overall status
     } else {
       hostTabsStatus.textContent = 'OK';
-      hostTabsStatus.className = `status-text ok`;
+      hostTabsStatus.className = 'status-text ok';
       hostTabsList.innerHTML = '<li><i>No restricted tabs detected.</i></li>';
-      // hostTabsSection.style.display = 'none'; // Optional: Hide section if OK
+      hostTabsSection.style.display = 'block'; // Keep section visible even if OK
     }
-
 
     // --- Screenshot Status ---
-    // **ASSUMPTION**: currentGuestData.screenshotInfo = { status: 'ok'|'warning'|'alert', details: '...' }
-    const screenInfo = currentGuestData.processes.screenshotInfo || { status: 'unknown', details: '' };
-    hostScreenshotStatus.textContent = screenInfo.status.toUpperCase();
-    hostScreenshotStatus.className = `status-text ${screenInfo.status}`;
+    const screenshots = currentGuestData.screenshot || [];
     hostScreenshotDetails.textContent = ''; // Clear previous details
-    if (screenInfo.status !== 'ok' && screenInfo.details) {
-        hostScreenshotDetails.textContent = screenInfo.details; // Use textContent for safety
-        hostScreenshotSection.style.display = 'block';
-        if (screenInfo.status === 'alert') overallStatus = 'alert';
-        else if (screenInfo.status === 'warning' && overallStatus === 'ok') overallStatus = 'warning';
-    } else {
-        hostScreenshotStatus.textContent = 'OK';
-        hostScreenshotStatus.className = `status-text ok`;
-        hostScreenshotDetails.textContent = 'No issues detected.';
-        // hostScreenshotSection.style.display = 'none'; // Optional: Hide section if OK
-    }
-
-
-    // --- Update Timeline ---
-    // **ASSUMPTION**: currentGuestData.timelineEvents = [ { timestamp: 'ISO_string', description: 'Event text' }, ... ]
-    hostTimelineList.innerHTML = ''; // Clear previous timeline
-    const events = currentGuestData.processes.timelineEvents || [];
-    if (events.length > 0) {
-        // Sort events newest first (assuming backend doesn't)
-        events.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-        // Limit number of events shown? e.g., events.slice(0, 20)
-        events.forEach(event => {
-            const li = document.createElement('li');
-            const timestampSpan = document.createElement('span');
-            const descriptionSpan = document.createElement('span');
-            timestampSpan.className = 'timestamp';
-            timestampSpan.textContent = `[${new Date(event.timestamp).toLocaleTimeString()}]`;
-            descriptionSpan.className = 'description';
-            descriptionSpan.textContent = event.description; // Use textContent
-            li.appendChild(timestampSpan);
-            li.appendChild(descriptionSpan);
-            hostTimelineList.appendChild(li);
+    if (screenshots.length > 0) {
+        hostScreenshotStatus.textContent = 'CAPTURED';
+        hostScreenshotStatus.className = 'status-text ok'; // Screenshots themselves aren't necessarily bad
+        screenshots.forEach(ss => {
+            const detail = `Display ${ss.displayId || 'N/A'}: ${ss.imageSize || ss.originalSize || 'Size unknown'} (${ss.format || 'format unknown'})`;
+            // NOTE: Displaying the actual image (ss.imageData) would require creating an <img> tag
+            // and setting its src to `data:image/${ss.format};base64,${ss.imageData}`.
+            // Be cautious with performance if images are large or frequent.
+            // For now, just listing details:
+            const p = document.createElement('p');
+            p.textContent = detail;
+            hostScreenshotDetails.appendChild(p);
         });
-        hostTimelineSection.style.display = 'block';
+        hostScreenshotSection.style.display = 'block';
+        // Screenshots don't usually change overall status unless there's a specific rule
     } else {
-        hostTimelineList.innerHTML = '<li><i>No recent events logged.</i></li>';
+        hostScreenshotStatus.textContent = 'N/A';
+        hostScreenshotStatus.className = 'status-text unknown';
+        hostScreenshotDetails.textContent = 'No screenshots received in this update.';
+        hostScreenshotSection.style.display = 'block'; // Keep section visible
     }
 
 
-    // Update overall status icon based on highest severity found
-    // Update overall status icon
-    let overallIcon = '🟢'; let overallIconClass = 'ok';
-    if (overallStatus === 'alert') { overallIcon = '🔴'; overallIconClass = 'alert'; }
-    else if (overallStatus === 'warning') { overallIcon = '🟡'; overallIconClass = 'warning'; }
+    // --- Update Timeline (Adapted) ---
+    // Use collectionTime and status/error for a simple log entry
+    hostTimelineList.innerHTML = ''; // Clear previous timeline (or prepend for history)
+    const timestamp = currentGuestData.collectionTime ? new Date(currentGuestData.collectionTime).toLocaleTimeString() : 'No timestamp';
+    let logEntry = `Update received. Status: ${currentGuestData.status || 'N/A'}.`;
+    if (currentGuestData.error) {
+        logEntry += ` Error: ${currentGuestData.error}`;
+    } else {
+        const issues = [];
+        if (flaggedProcesses.length > 0) issues.push(`${flaggedProcesses.length} flagged process(es)`);
+        if (flaggedTabs.length > 0) issues.push(`${flaggedTabs.length} flagged tab(s)`);
+        if (issues.length > 0) {
+            logEntry += ` Issues: ${issues.join(', ')}.`;
+        } else {
+            logEntry += ` No issues detected.`;
+        }
+    }
+
+    const li = document.createElement('li');
+    const timestampSpan = document.createElement('span');
+    const descriptionSpan = document.createElement('span');
+    timestampSpan.className = 'timestamp';
+    timestampSpan.textContent = `[${timestamp}]`;
+    descriptionSpan.className = 'description';
+    descriptionSpan.textContent = logEntry; // Use textContent
+    li.appendChild(timestampSpan);
+    li.appendChild(descriptionSpan);
+    hostTimelineList.appendChild(li); // Consider prepending: hostTimelineList.prepend(li);
+    hostTimelineSection.style.display = 'block';
+
+
+    // --- Finalize Overall Status Icon ---
+    // Set icon based on the final overallStatus determined above
+    if (overallStatus === 'alert') {
+        overallIcon = '🔴'; overallIconClass = 'alert';
+    } else if (overallStatus === 'warning') {
+        overallIcon = '🟡'; overallIconClass = 'warning';
+    } else { // ok
+        overallIcon = '🟢'; overallIconClass = 'ok';
+    }
     hostOverallStatusIcon.textContent = overallIcon;
     hostOverallStatusIcon.className = `status-icon ${overallIconClass}`;
   }
@@ -212,11 +367,11 @@ document.addEventListener('DOMContentLoaded', () => {
         //TODO(binp): we might want to change this.
         if (typeof serverData === 'object' && serverData !== null) {
             //TODO: The code only work in the single guest mode.
-            for (const userId in serverData) {
+            for (const meetingCode in serverData) {
                 // **ASSUMPTION**: serverData.data[guestId] now contains:
-                // { name: '..', lastUpdate: '..', processes: { status: '..', details: [] }, tabs: {...}, screenshots: {...}, timelineEvents: [...] }
-                currentGuestData = serverData[userId];
-                console.log('Displaying data for guest:', userId);
+                // data format is defined in data_format.go.
+                currentGuestData = serverData[meetingCode];
+                console.log('Displaying data for guest:', meetingCode);
                 updateHostDashboard(); // Update UI
                 updateStatus(`Host mode listening. Last fetch: ${new Date().toLocaleTimeString()}`);
             }
