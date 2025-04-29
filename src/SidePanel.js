@@ -309,7 +309,7 @@ document.addEventListener('DOMContentLoaded', () => {
       guestInfo.guestName = "Binbin Peng"
       guestInfo.meetingId = meet.addon.meetingId
       guestInfo.meetingCode = meet.addon.meetingCode
-      console.log('Send the payload to the backend server: (${guestInfo})')
+      console.log(`Send the payload to the backend server: (${guestInfo})`)
 
       fetch(SERVER_URL, {
         method: 'POST',
