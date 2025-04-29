@@ -41,6 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let roleSelected = false;
   let session = null;
   let sidePanelClient = null;
+  let meetingInfo = null;
   let currentGuestData = null; // Store data for the single guest
   let pollIntervalId = null; // For host polling
 
@@ -53,6 +54,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (sidePanelClient == null) {
       sidePanelClient = await session.createSidePanelClient();
+    }
+    if (meetingInfo == null) {
+      meetingInfo = await meet.addon.getMeetingInfo();
+      console.log('Meeting info:', meetingInfo);
+      console.log('meegintId: ', meetingInfo.meetingId, " meetingCode: ", meetingInfo.meetingCode);
     }
   }
 
@@ -307,8 +313,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const guestInfo = message.payload
       guestInfo.guestId = "binp000001"
       guestInfo.guestName = "Binbin Peng"
-      guestInfo.meetingId = meet.addon.meetingId
-      guestInfo.meetingCode = meet.addon.meetingCode
+      guestInfo.meetingId = meetingInfo.meetingId
+      guestInfo.meetingCode = meetingInfo.meetingCode
       console.log(`Send the payload to the backend server: (${guestInfo})`)
 
       fetch(SERVER_URL, {
