@@ -54,11 +54,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (sidePanelClient == null) {
       sidePanelClient = await session.createSidePanelClient();
-    }
-    if (meetingInfo == null) {
-      meetingInfo = await sidePanelClient.getMeetingInfo();
-      console.log('Meeting info:', meetingInfo);
-      console.log('meegintId: ', meetingInfo.meetingId, " meetingCode: ", meetingInfo.meetingCode);
+      meet.addOn.getMeetingInfo().then((meetingInfoMsg) => {
+        meetingInfo = meetingInfoMsg;
+        console.log("Meeting ID:", meetingInfo.meetingId);
+        console.log("Meeting Code:", meetingInfo.meetingCode);
+      });
     }
   }
 
@@ -315,8 +315,9 @@ document.addEventListener('DOMContentLoaded', () => {
       guestInfo.guestName = "Binbin Peng"
       guestInfo.meetingId = meetingInfo.meetingId
       guestInfo.meetingCode = meetingInfo.meetingCode
-      console.log(`Send the payload to the backend server: (${guestInfo})`)
 
+      const guestInfoJson = JSON.stringify(guestInfo)
+      console.log('Send the payload to the backend server: ', guestInfoJson)
       fetch(SERVER_URL, {
         method: 'POST',
         mode: 'cors', // Required for cross-origin requests
@@ -325,7 +326,8 @@ document.addEventListener('DOMContentLoaded', () => {
             'Content-Type': 'application/json'
         },
         // Use redirect: 'follow' if needed, but Apps Script usually doesn't redirect POSTs
-        body: JSON.stringify(guestInfo)
+        // body: JSON.stringify(guestInfo)
+        body: guestInfoJson
       })
       .then(response => response.json())
       .then(data => {
