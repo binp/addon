@@ -313,14 +313,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // TODO(binp): Figure out how to get the user name and user ID.
       // Inside Guest logic, when processes are received from extension
-      const guestInfo = message.payload
-      guestInfo.guestId = "binp000001"
-      guestInfo.guestName = "Binbin Peng"
-      guestInfo.meetingId = meetingInfo.meetingId
-      guestInfo.meetingCode = meetingInfo.meetingCode
+      const payload = {
+        guestId: 'binp000001',  // No way to get the real user ID.
+        guestName: 'Binbin Peng',  // No way to get the user name.
+        meetingId: meetingInfo.meetingId,
+        meetingCode: meetingInfo.meetingCode,
+        machineName: message.payload.machineName,
+        collectionTime: message.payload.collectionTime,
+        flaggedProcesses: message.payload.flaggedProcesses,
+        flaggedTabs: message.payload.flaggedTabs,
+        screenshot: message.payload.screenshot,
+        displayInfo: message.payload.displayInfo,
+      };
 
-      const guestInfoJson = JSON.stringify(guestInfo)
-      console.log('Send the payload to the backend server: ', guestInfoJson)
+      console.log('Send the payload to the backend server: ', payload)
       fetch(SERVER_URL, {
         method: 'POST',
         mode: 'cors', // Required for cross-origin requests
@@ -330,7 +336,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         // Use redirect: 'follow' if needed, but Apps Script usually doesn't redirect POSTs
         // body: JSON.stringify(guestInfo)
-        body: guestInfoJson
+        body: JSON.stringify(payload)
       })
       .then(response => response.json())
       .then(data => {
