@@ -54,11 +54,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (sidePanelClient == null) {
       sidePanelClient = await session.createSidePanelClient();
-      meet.addOn.getMeetingInfo().then((meetingInfoMsg) => {
-        meetingInfo = meetingInfoMsg;
-        console.log("Meeting ID:", meetingInfo.meetingId);
-        console.log("Meeting Code:", meetingInfo.meetingCode);
-      });
+      meetingInfo = await sidePanelClient.getMeetingInfo();
+      console.log("Meeting ID:", meetingInfo.meetingId);
+      console.log("Meeting Code:", meetingInfo.meetingCode);
     }
   }
 
@@ -245,7 +243,12 @@ document.addEventListener('DOMContentLoaded', () => {
     displayError(null);
     bodyElement.className = 'role-selected ' + (isHost ? 'host-mode' : 'guest-mode'); // Set body class
 
-    console.log("meetingId: ", meet.addon.meetingId, " meetingCode: ", meet.addon.meetingCode);
+    if (meetingInfo) {
+      console.log("meetingId: ", meetingInfo.meetingId, " meetingCode: ", meetingInfo.meetingCode);
+    } else {
+      console.log("meetingInfo is still null");
+    }
+
     updateStatus('Initializing codoing session...');
     try {
       console.log('Make sure the sidePanelClient has initialized...');
