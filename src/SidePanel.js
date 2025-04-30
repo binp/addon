@@ -486,10 +486,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // body: JSON.stringify(guestInfo)
         body: JSON.stringify(guestInfo)
       })
-      .then(response => {
-        m = response.json()
-        console.log("Got the response: ", m)
-      })
+      .then(response => response.json())
       .then(data => {
         if (data.success) {
             console.log('Successfully POSTed data to server:', data);
