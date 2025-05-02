@@ -356,32 +356,70 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- Function to Fetch the GuestInfo Data from the candidate side for Host ---
   async function fetchHostData() {
-    if (!isHost || !roleSelected) return;
-    console.log('Host fetching data...');
+    if (!isHost || !roleSelected || !meetingInfo?.meetingId){
+      console.warn("Host fetch skipped: Conditions not met (isHost, roleSelected, meetingId).");
+      // Optionally clear the dashboard if conditions aren't met
+      // currentGuestData = null;
+      // updateHostDashboard();
+      return;
+    }
+
+    const meetingIdToFetch = meetingInfo.meetingId; // Use the meetingId obtained from the addon session
+    console.log(`Host fetching data for meetingId: ${meetingIdToFetch}...`);
     updateStatus('Host mode fetching data...');
+
+    // Construct the URL with the query parameter
+    const url = new URL(SERVER_URL);
+    url.searchParams.append('meetingId', meetingIdToFetch); // Use 'meetingId' as per backend handler
+
     try {
-        const response = await fetch(SERVER_URL, { method: 'GET', mode: 'cors', cache: 'no-cache' });
-        if (!response.ok) { throw new Error(`HTTP error ${response.status}`); }
-        const serverData = await response.json();
-        console.log('Host received data:', serverData);
-        //TODO(binp): we might want to change this.
-        if (typeof serverData === 'object' && serverData !== null) {
-            //TODO: The code only work in the single guest mode.
-            for (const meetingCode in serverData) {
-                // **ASSUMPTION**: serverData.data[guestId] now contains:
-                // data format is defined in data_format.go.
-                currentGuestData = serverData[meetingCode];
-                console.log('Displaying data for guest:', meetingCode);
-                updateHostDashboard(); // Update UI
-                updateStatus(`Host mode listening. Last fetch: ${new Date().toLocaleTimeString()}`);
-            }
-        } else {
-          throw new Error(serverData.error || 'Invalid data format');
+        const response = await fetch(url.toString(), {
+            method: 'GET',
+            mode: 'cors',
+            cache: 'no-cache'
+        });
+
+        if (!response.ok) {
+            // Handle specific errors like 404 (meeting not found) differently?
+            // For now, treat all non-ok statuses as errors.
+            throw new Error(`HTTP error ${response.status}`);
         }
-    } catch (error) {
-      console.error('Error fetching data from server:', error);
-      displayError(`Network error fetching data: ${error.message}`);
-      updateStatus('Network Error (GET)');
+
+        const meetingData = await response.json(); // This should be the map { guestId: GuestInfo, ... }
+        console.log(`Host received data for meeting ${meetingIdToFetch}:`, meetingData);
+
+        // Check if the response is a valid object
+        if (typeof meetingData === 'object' && meetingData !== null) {
+          const guestIds = Object.keys(meetingData);
+
+          if (guestIds.length > 0) {
+              // --- Displaying the *first* guest's data ---
+              const firstGuestId = guestIds[0];
+              currentGuestData = meetingData[firstGuestId]; // Get the GuestInfo for the first guest
+              console.log(`Displaying data for first guest found: ${firstGuestId}`);
+
+              updateHostDashboard(); // Update UI with the first guest's data
+              updateStatus(`Host mode listening. Displaying data for ${currentGuestData.guestName || firstGuestId}. Last fetch: ${new Date().toLocaleTimeString()}`);
+          } else {
+              // Meeting exists, but no guests have sent data yet
+              console.log(`No guest data found for meeting ${meetingIdToFetch} yet.`);
+              currentGuestData = null; // Clear previous data if any
+              updateHostDashboard(); // Update UI to show "Waiting for guest..." state
+              updateStatus(`Host mode listening. Waiting for guest data in meeting ${meetingIdToFetch}...`);
+          }
+        } else {
+          // This case should ideally not happen if the backend sends {} for non-existent meetings
+          // or an empty map {} if the meeting exists but has no guests.
+          console.error('Received unexpected data format from server:', meetingData);
+          throw new Error('Invalid data format received from server');
+        }
+      } catch (error) {
+        console.error(`Error fetching data for meeting ${meetingIdToFetch}:`, error);
+        displayError(`Network error fetching data: ${error.message}`);
+        updateStatus('Network Error (GET)');
+        // Optionally clear the dashboard on error
+        // currentGuestData = null;
+        // updateHostDashboard();
     }
   }
 
@@ -482,8 +520,6 @@ document.addEventListener('DOMContentLoaded', () => {
         headers: {
             'Content-Type': 'application/json'
         },
-        // Use redirect: 'follow' if needed, but Apps Script usually doesn't redirect POSTs
-        // body: JSON.stringify(guestInfo)
         body: JSON.stringify(guestInfo)
       })
       .then(response => response.json())
@@ -516,8 +552,8 @@ document.addEventListener('DOMContentLoaded', () => {
   hostButton.addEventListener('click', () => startSelectedMode(true));
   guestButton.addEventListener('click', () => startSelectedMode(false));
   window.addEventListener('message', handleMessage);
-  setUpAddon(); // Complete the set up of the addon and create session, sidePanelClient and coDoingClient.
-  // window.addEventListener('unload', () => { /* ... cleanup ... */ });
+  setUpAddon(); // Complete the set up of the addon and create session, and sidePanelClient.
+
   // Remember to clear the interval on unload or if mode changes
   window.addEventListener('unload', () => {
     window.removeEventListener('message', handleMessage);
