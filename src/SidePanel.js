@@ -348,8 +348,22 @@ document.addEventListener('DOMContentLoaded', () => {
     isHost = chosenIsHost;
 
     console.log(`Role selected: ${isHost ? 'Host' : 'Guest'}`);
-    displayError(null);
-    bodyElement.className = 'role-selected ' + (isHost ? 'host-mode' : 'guest-mode'); // Set body class
+    displayError(null); // Clear any previous general errors
+
+    // Explicitly hide role selection now that a role is chosen.
+    // Login section is already hidden because the user must be logged in to see role selection.
+    roleSelectionDiv.style.display = 'none';
+
+    // Manage body classes correctly to show appropriate content section
+    // and ensure 'logged-in' class (set by onAuthStateChanged) is preserved.
+    bodyElement.classList.add('role-selected');
+    if (isHost) {
+      bodyElement.classList.add('host-mode');
+      bodyElement.classList.remove('guest-mode'); // Ensure other mode is not active
+    } else {
+      bodyElement.classList.add('guest-mode');
+      bodyElement.classList.remove('host-mode'); // Ensure other mode is not active
+    }
 
     if (meetingInfo) {
       console.log("meetingId: ", meetingInfo.meetingId, " meetingCode: ", meetingInfo.meetingCode);
@@ -358,6 +372,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     updateStatus('Initializing codoing session...');
+
     try {
       console.log('Make sure the sidePanelClient has initialized...');
       // Use the stored sdkInstance from registerSdk()
@@ -366,11 +381,6 @@ document.addEventListener('DOMContentLoaded', () => {
         await setUpAddon();
       }
       console.log('The side panel has started/joined.');
-      // updateStatus(isHost ? 'Host mode listening.' : 'Guest mode ready to send.');
-
-      // For role selected.
-      // Set visibility of main content.
-      bodyElement.classList.add('role-selected'); // Update class to include 'role-selected'
 
       if (isHost) {
         sidePanelClient.startActivity({
@@ -473,19 +483,26 @@ document.addEventListener('DOMContentLoaded', () => {
       // User is signed in, see docs for a list of available properties
       // https://firebase.google.com/docs/reference/js/auth.user
       console.log('User is signed in:', user);
-      displayLoginError(null);
-      bodyElement.classList.add('logged-in'); // Show role selection
+      displayLoginError(null); // Clear any previous login errors
+      bodyElement.classList.add('logged-in'); // Add class for CSS rules (e.g., to hide login section)
+
+      loginSectionDiv.style.display = 'none';   // Explicitly hide login section
+      roleSelectionDiv.style.display = 'flex';  // Explicitly show role selection (uses flex for its layout)
+
       // Proceed to initialize the addon
       await setUpAddon();
-      // Show the role-selection
-      roleSelectionDiv.style.display = 'block';
       // Set default value of the status
-      updateStatus('Please select your role above.');
+      updateStatus('Please select your role above.'); // Status when role selection is shown
     } else {
       // User is signed out
       console.log('User is signed out');
-      bodyElement.classList.remove('logged-in'); // Hide role selection
-      loginSectionDiv.style.display = 'block'; // Make sure login is visible
+      bodyElement.classList.remove('logged-in'); // Remove class
+      // Also remove role-specific classes if the user signs out after selecting a role
+      bodyElement.classList.remove('role-selected', 'host-mode', 'guest-mode');
+
+      loginSectionDiv.style.display = 'flex';   // Explicitly show login section (uses flex for its layout)
+      roleSelectionDiv.style.display = 'none';  // Explicitly hide role selection
+      updateStatus('Please log in to continue.'); // Status when login is shown
     }
   });
 
@@ -545,4 +562,3 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
 }); // End DOMContentLoaded listener
-

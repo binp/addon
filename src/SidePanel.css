@@ -41,12 +41,13 @@ h5 {
 
 /* --- Role Selection --- */
 #role-selection {
+  display: none; /* Hide by default */
   padding: 15px 0;
-  display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   flex-grow: 1;
+  /* display: flex; will be set by JS when it needs to be shown */
   gap: 10px;
 }
 
@@ -281,9 +282,7 @@ h5 {
 body.logged-in #login-section {
     display: none;
 }
-body.logged-in #role-selection {
-    display:flex;
-}
+/* Role selection visibility will be handled by JavaScript on login and by the rule below on role selection */
 /* Hide role selection once a role is selected */
 body.role-selected #role-selection {
     display: none;
