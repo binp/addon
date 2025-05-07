@@ -1,9 +1,24 @@
 // SidePanel.js
 
 import { meet } from '@googleworkspace/meet-addons/meet.addons';
+import { initializeApp } from 'firebase/app';
+import { getAnalytics } from "firebase/analytics";
+import { getAuth, GoogleAuthProvider, FacebookAuthProvider, signInWithPopup, onAuthStateChanged } from "firebase/auth";
 
 const CLOUD_PROJECT_NUMBER = '331777483172';
 const SERVER_URL = 'https://helloworld-331777483172.us-west1.run.app/processes';
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyAr5BXnNexqOGuVoXikWZS4hSUKFh8cmDA",
+  authDomain: "interview-proctor.firebaseapp.com",
+  databaseURL: "https://interview-proctor-default-rtdb.firebaseio.com",
+  projectId: "interview-proctor",
+  storageBucket: "interview-proctor.firebasestorage.app",
+  messagingSenderId: "124879970402",
+  appId: "1:124879970402:web:80ce4ae7b862d6be7db13b",
+  measurementId: "G-1SCPSVG9F2"
+};
 
 document.addEventListener('DOMContentLoaded', () => {
   console.log('DOM Loaded. Initializing Addon with Role Selection and Timeline.');
@@ -14,6 +29,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const bodyElement = document.body;
   const roleSelectionDiv = document.getElementById('role-selection');
   const hostButton = document.getElementById('host-button');
+  // Social login buttons
+  const loginSectionDiv = document.getElementById('login-section');
+  const loginGoogleButton = document.getElementById('login-google');
+  const loginFacebookButton = document.getElementById('login-facebook');
+  const loginMicrosoftButton = document.getElementById('login-microsoft');
+  const loginErrorMessage = document.getElementById('login-error-message');
+
+
   const guestButton = document.getElementById('guest-button');
   // const guestStatusDetail = document.getElementById('guest-status-detail');
   // Guest UI Elements
@@ -44,6 +67,15 @@ document.addEventListener('DOMContentLoaded', () => {
   let meetingInfo = null;
   let currentGuestData = null; // Store data for the single guest
   let pollIntervalId = null; // For host polling
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+  // Initialize Firebase Authentication and get a reference to the service
+  const auth = getAuth(app);
+  const googleProvider = new GoogleAuthProvider();
+  const facebookProvider = new FacebookAuthProvider();
+  // TODO: Add MS Provider
 
   // Create the session and side panel client and hold on them.
   async function setUpAddon() {
@@ -82,124 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return li;
   }
 
-  // /** Updates the Host dashboard based on currentGuestData */
-  // function updateHostDashboard() {
-  //   if (!isHost || !roleSelected) return;
-
-  //   if (!currentGuestData) {
-  //     hostGuestName.textContent = 'Guest: ---';
-  //     hostOverallStatusIcon.textContent = '⚪';
-  //     hostOverallStatusIcon.className = 'status-icon unknown';
-  //     hostLastUpdate.textContent = 'Last Update: Waiting for guest...';
-  //     // Reset detail sections
-  //     hostProcessesStatus.textContent = '---'; hostProcessesStatus.className = 'status-text unknown'; hostProcessesList.innerHTML = '';
-  //     hostTabsStatus.textContent = '---'; hostTabsStatus.className = 'status-text unknown'; hostTabsList.innerHTML = '';
-  //     hostScreenshotStatus.textContent = '---'; hostScreenshotStatus.className = 'status-text unknown'; hostScreenshotDetails.textContent = '';
-  //     hostTimelineList.innerHTML = '<li><i>Waiting for guest data...</i></li>';
-  //     return;
-  //   }
-
-  //   // Update header
-  //   hostGuestName.textContent = `Guest: ${currentGuestData.userName || 'Unknown'}`;
-  //   hostLastUpdate.textContent = `Last Update: ${currentGuestData.lastUpdate ? new Date(currentGuestData.lastUpdate).toLocaleTimeString() : 'N/A'}`;
-
-  //   // Determine overall status and update details
-  //   let overallStatus = 'ok'; // ok, warning, alert
-
-  //   // --- Process Status ---
-  //   // **ASSUMPTION**: currentGuestData contains objects like:
-  //   // processInfo: { status: 'ok'|'warning'|'alert', flaggedProcesses: ['proc1', 'proc2'] }
-  //   const processInfo = currentGuestData.processes.processInfo || { status: 'unknown', flaggedProcesses: [] };
-  //   console.log("Got the processInfo: ", processInfo)
-  //   hostProcessesStatus.textContent = processInfo.status.toUpperCase();
-  //   hostProcessesStatus.className = `status-text ${processInfo.status}`;
-  //   hostProcessesList.innerHTML = ''; // Clear previous list
-  //   if (processInfo.status !== 'ok' && processInfo.flaggedProcesses.length > 0) {
-  //     processInfo.flaggedProcesses.forEach(proc => hostProcessesList.appendChild(createListItem(proc)));
-  //     hostProcessesSection.style.display = 'block';
-  //     if (processInfo.status === 'alert') overallStatus = 'alert';
-  //     else if (processInfo.status === 'warning') overallStatus = 'warning';
-  //   } else {
-  //      hostProcessesStatus.textContent = 'OK';
-  //      hostProcessesStatus.className = `status-text ok`;
-  //      hostProcessesList.innerHTML = '<li><i>No flagged processes.</i></li>'; // Show OK status
-  //      // hostProcessesSection.style.display = 'none'; // Optional: Hide section if OK
-  //   }
-
-  //   // --- Tabs Status ---
-  //   // **ASSUMPTION**: currentGuestData.openedTabInfo = { status: 'ok'|'warning', flaggedTabs: ['url1'] }
-  //   const tabInfo = currentGuestData.processes.openedTabInfo || { status: 'unknown', flaggedTabs: [] };
-  //   hostTabsStatus.textContent = tabInfo.status.toUpperCase();
-  //   hostTabsStatus.className = `status-text ${tabInfo.status}`;
-  //   hostTabsList.innerHTML = '';
-  //   if (tabInfo.status !== 'ok' && tabInfo.flaggedTabs.length > 0) {
-  //     tabInfo.flaggedTabs.forEach(tab => hostTabsList.appendChild(createListItem(tab)));
-  //     hostTabsSection.style.display = 'block';
-  //     if (tabInfo.status === 'alert') overallStatus = 'alert'; // Assuming tabs can trigger alerts
-  //     else if (tabInfo.status === 'warning' && overallStatus === 'ok') overallStatus = 'warning';
-  //   } else {
-  //     hostTabsStatus.textContent = 'OK';
-  //     hostTabsStatus.className = `status-text ok`;
-  //     hostTabsList.innerHTML = '<li><i>No restricted tabs detected.</i></li>';
-  //     // hostTabsSection.style.display = 'none'; // Optional: Hide section if OK
-  //   }
-
-
-  //   // --- Screenshot Status ---
-  //   // **ASSUMPTION**: currentGuestData.screenshotInfo = { status: 'ok'|'warning'|'alert', details: '...' }
-  //   const screenInfo = currentGuestData.processes.screenshotInfo || { status: 'unknown', details: '' };
-  //   hostScreenshotStatus.textContent = screenInfo.status.toUpperCase();
-  //   hostScreenshotStatus.className = `status-text ${screenInfo.status}`;
-  //   hostScreenshotDetails.textContent = ''; // Clear previous details
-  //   if (screenInfo.status !== 'ok' && screenInfo.details) {
-  //       hostScreenshotDetails.textContent = screenInfo.details; // Use textContent for safety
-  //       hostScreenshotSection.style.display = 'block';
-  //       if (screenInfo.status === 'alert') overallStatus = 'alert';
-  //       else if (screenInfo.status === 'warning' && overallStatus === 'ok') overallStatus = 'warning';
-  //   } else {
-  //       hostScreenshotStatus.textContent = 'OK';
-  //       hostScreenshotStatus.className = `status-text ok`;
-  //       hostScreenshotDetails.textContent = 'No issues detected.';
-  //       // hostScreenshotSection.style.display = 'none'; // Optional: Hide section if OK
-  //   }
-
-
-  //   // --- Update Timeline ---
-  //   // **ASSUMPTION**: currentGuestData.timelineEvents = [ { timestamp: 'ISO_string', description: 'Event text' }, ... ]
-  //   hostTimelineList.innerHTML = ''; // Clear previous timeline
-  //   const events = currentGuestData.processes.timelineEvents || [];
-  //   if (events.length > 0) {
-  //       // Sort events newest first (assuming backend doesn't)
-  //       events.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-  //       // Limit number of events shown? e.g., events.slice(0, 20)
-  //       events.forEach(event => {
-  //           const li = document.createElement('li');
-  //           const timestampSpan = document.createElement('span');
-  //           const descriptionSpan = document.createElement('span');
-  //           timestampSpan.className = 'timestamp';
-  //           timestampSpan.textContent = `[${new Date(event.timestamp).toLocaleTimeString()}]`;
-  //           descriptionSpan.className = 'description';
-  //           descriptionSpan.textContent = event.description; // Use textContent
-  //           li.appendChild(timestampSpan);
-  //           li.appendChild(descriptionSpan);
-  //           hostTimelineList.appendChild(li);
-  //       });
-  //       hostTimelineSection.style.display = 'block';
-  //   } else {
-  //       hostTimelineList.innerHTML = '<li><i>No recent events logged.</i></li>';
-  //   }
-
-
-  //   // Update overall status icon based on highest severity found
-  //   // Update overall status icon
-  //   let overallIcon = '🟢'; let overallIconClass = 'ok';
-  //   if (overallStatus === 'alert') { overallIcon = '🔴'; overallIconClass = 'alert'; }
-  //   else if (overallStatus === 'warning') { overallIcon = '🟡'; overallIconClass = 'warning'; }
-  //   hostOverallStatusIcon.textContent = overallIcon;
-  //   hostOverallStatusIcon.className = `status-icon ${overallIconClass}`;
-  // }
-
-  /** Updates the Host dashboard based on currentGuestData (GuestInfo format) */
+  /** Updates the Host dashboard based on currentGuestData (CandidateInfo format) */
   function updateHostDashboard() {
     if (!isHost || !roleSelected) return;
 
@@ -223,8 +138,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Update Header ---
-    // Use guestName and collectionTime from GuestInfo
-    hostGuestName.textContent = `Guest: ${currentGuestData.guestName || 'Unknown'}`;
+    // Use guestName and collectionTime from CandidateInfo
+    hostGuestName.textContent = `Guest: ${currentGuestData.userName || 'Unknown'}`;
     hostLastUpdate.textContent = `Last Update: ${currentGuestData.collectionTime ? new Date(currentGuestData.collectionTime).toLocaleString() : 'N/A'}`; // Use toLocaleString for date+time
 
     // --- Determine Overall Status ---
@@ -354,7 +269,7 @@ document.addEventListener('DOMContentLoaded', () => {
     hostOverallStatusIcon.className = `status-icon ${overallIconClass}`;
   }
 
-  // --- Function to Fetch the GuestInfo Data from the candidate side for Host ---
+  // --- Function to Fetch the CandidateInfo Data from the candidate side for Host ---
   async function fetchHostData() {
     if (!isHost || !roleSelected || !meetingInfo?.meetingId){
       console.warn("Host fetch skipped: Conditions not met (isHost, roleSelected, meetingId).");
@@ -385,21 +300,21 @@ document.addEventListener('DOMContentLoaded', () => {
             throw new Error(`HTTP error ${response.status}`);
         }
 
-        const meetingData = await response.json(); // This should be the map { guestId: GuestInfo, ... }
+        const meetingData = await response.json(); // This should be the map { userId: CandidateInfo, ... }
         console.log(`Host received data for meeting ${meetingIdToFetch}:`, meetingData);
 
         // Check if the response is a valid object
         if (typeof meetingData === 'object' && meetingData !== null) {
-          const guestIds = Object.keys(meetingData);
+          const userIds = Object.keys(meetingData);
 
-          if (guestIds.length > 0) {
+          if (userIds.length > 0) {
               // --- Displaying the *first* guest's data ---
-              const firstGuestId = guestIds[0];
-              currentGuestData = meetingData[firstGuestId]; // Get the GuestInfo for the first guest
-              console.log(`Displaying data for first guest found: ${firstGuestId}`);
+              const firstUserId = userIds[0];
+              currentGuestData = meetingData[firstUserId]; // Get the CandidateInfo for the first guest
+              console.log(`Displaying data for first candidate found: ${firstUserId}`);
 
               updateHostDashboard(); // Update UI with the first guest's data
-              updateStatus(`Host mode listening. Displaying data for ${currentGuestData.guestName || firstGuestId}. Last fetch: ${new Date().toLocaleTimeString()}`);
+              updateStatus(`Host mode listening. Displaying data for ${currentGuestData.userName || firstUserId}. Last fetch: ${new Date().toLocaleTimeString()}`);
           } else {
               // Meeting exists, but no guests have sent data yet
               console.log(`No guest data found for meeting ${meetingIdToFetch} yet.`);
@@ -453,11 +368,14 @@ document.addEventListener('DOMContentLoaded', () => {
       console.log('The side panel has started/joined.');
       // updateStatus(isHost ? 'Host mode listening.' : 'Guest mode ready to send.');
 
+      // For role selected.
+      // Set visibility of main content.
+      bodyElement.classList.add('role-selected'); // Update class to include 'role-selected'
+
       if (isHost) {
         sidePanelClient.startActivity({
           sidePanelUrl: "https://binp.github.io/addon/src/SidePanel.html"
         });
-        // HOST: Listen for broadcasts
         // Inside Host logic in startSelectedMode, after setting isHost=true
         // Inside Host logic in startSelectedMode, after setting isHost=true
         updateStatus('Host mode active. Fetching initial data...');
@@ -506,13 +424,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // TODO(binp): Figure out how to get the user name and user ID.
       // Inside Guest logic, when processes are received from extension
-      const guestInfo = message.payload.guestInfo
-      guestInfo.guestId = 'binp000001';  // No way to get the real user ID.
-      guestInfo.guestName = 'Binbin Peng';  // No way to get the user name.
-      guestInfo.meetingId = meetingInfo.meetingId;
-      guestInfo.meetingCode = meetingInfo.meetingCode;
+      const candidateInfo = message.payload.candidateInfo
+      candidateInfo.userId = 'binp000001';  // No way to get the real user ID.
+      candidateInfo.userName = 'Binbin Peng';  // No way to get the user name.
+      candidateInfo.meetingId = meetingInfo.meetingId;
+      candidateInfo.meetingCode = meetingInfo.meetingCode;
 
-      console.log('Send the payload to the backend server: ', guestInfo)
+      console.log('Send the payload to the backend server: ', candidateInfo)
       fetch(SERVER_URL, {
         method: 'POST',
         mode: 'cors', // Required for cross-origin requests
@@ -520,7 +438,7 @@ document.addEventListener('DOMContentLoaded', () => {
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify(guestInfo)
+        body: JSON.stringify(candidateInfo)
       })
       .then(response => response.json())
       .then(data => {
@@ -548,13 +466,79 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // --- Firebase Auth Listeners ---
+  // Listen to the state change in the auth to know if user is signed in or not.
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      // User is signed in, see docs for a list of available properties
+      // https://firebase.google.com/docs/reference/js/auth.user
+      console.log('User is signed in:', user);
+      displayLoginError(null);
+      bodyElement.classList.add('logged-in'); // Show role selection
+      // Proceed to initialize the addon
+      await setUpAddon();
+      // Show the role-selection
+      roleSelectionDiv.style.display = 'block';
+      // Set default value of the status
+      updateStatus('Please select your role above.');
+    } else {
+      // User is signed out
+      console.log('User is signed out');
+      bodyElement.classList.remove('logged-in'); // Hide role selection
+      loginSectionDiv.style.display = 'block'; // Make sure login is visible
+    }
+  });
+
+  // Helper to show/hide login error messages
+  function displayLoginError(text) {
+    if (text) {
+      loginErrorMessage.textContent = text;
+      loginErrorMessage.style.display = 'block';
+    } else {
+      loginErrorMessage.textContent = '';
+      loginErrorMessage.style.display = 'none';
+    }
+  }
+
+  // Handle Google Sign-In
+  loginGoogleButton.addEventListener('click', () => {
+    signInWithPopup(auth, googleProvider)
+      .then((result) => {
+        // This gives you a Google Access Token. You can use it to access the Google API.
+        // const credential = GoogleAuthProvider.credentialFromResult(result);
+        // const token = credential.accessToken;
+        const user = result.user;
+        console.log('Google sign-in successful:', user);
+      }).catch((error) => {
+        console.error('Google sign-in error:', error);
+        displayLoginError('Google login failed. ' + error.message);
+      });
+  });
+
+  // Handle Facebook Sign-In
+  loginFacebookButton.addEventListener('click', () => {
+    signInWithPopup(auth, facebookProvider)
+      .then((result) => {
+        // const credential = FacebookAuthProvider.credentialFromResult(result);
+        // const token = credential.accessToken;
+        const user = result.user;
+        console.log('Facebook sign-in successful:', user);
+      }).catch((error) => {
+        console.error('Facebook sign-in error:', error);
+        displayLoginError('Facebook login failed. ' + error.message);
+      });
+  });
+
+  // TODO: Handle Microsoft Sign-In
+
   // --- Initialization & Event Listeners ---
   hostButton.addEventListener('click', () => startSelectedMode(true));
   guestButton.addEventListener('click', () => startSelectedMode(false));
   window.addEventListener('message', handleMessage);
-  setUpAddon(); // Complete the set up of the addon and create session, and sidePanelClient.
+  // setUpAddon(); // Complete the set up of the addon and create session, and sidePanelClient.
 
   // Remember to clear the interval on unload or if mode changes
+
   window.addEventListener('unload', () => {
     window.removeEventListener('message', handleMessage);
     if (pollIntervalId) clearInterval(pollIntervalId);   // Clear polling on unload

@@ -50,6 +50,30 @@ h5 {
   gap: 10px;
 }
 
+/* --- Login Section --- */
+#login-section {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-grow: 1; /* Take available height */
+  gap: 10px; /* Space between buttons */
+}
+
+#login-google, #login-facebook, #login-microsoft {
+  padding: 8px 15px;
+  margin: 5px 0;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  cursor: pointer;
+  background-color: #ffffff;
+  color: #202124; /* Dark text */
+}
+#login-google:hover, #login-facebook:hover, #login-microsoft:hover {
+  background-color: #f8f9fa; /* Light grey hover */
+}
+
 .role-button {
   padding: 8px 15px;
   font-size: 0.9em;
@@ -251,6 +275,14 @@ h5 {
 /* Hide main content sections by default */
 .content-section {
     display: none;
+}
+
+/* Hide login section when logged in */
+body.logged-in #login-section {
+    display: none;
+}
+body.logged-in #role-selection {
+    display:flex;
 }
 /* Hide role selection once a role is selected */
 body.role-selected #role-selection {
