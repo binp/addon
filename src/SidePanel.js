@@ -535,7 +535,7 @@ document.addEventListener('DOMContentLoaded', () => {
   hostButton.addEventListener('click', () => startSelectedMode(true));
   guestButton.addEventListener('click', () => startSelectedMode(false));
   window.addEventListener('message', handleMessage);
-  // setUpAddon(); // Complete the set up of the addon and create session, and sidePanelClient.
+  setUpAddon(); // Complete the set up of the addon and create session, and sidePanelClient.
 
   // Remember to clear the interval on unload or if mode changes
 
