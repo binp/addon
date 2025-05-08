@@ -4,6 +4,7 @@ import { meet } from '@googleworkspace/meet-addons/meet.addons';
 import { initializeApp } from 'firebase/app';
 import { getAnalytics } from "firebase/analytics";
 import { getAuth, GoogleAuthProvider, FacebookAuthProvider, signInWithPopup, onAuthStateChanged } from "firebase/auth";
+import { getDatabase, ref, set, serverTimestamp } from "firebase/database";
 
 const CLOUD_PROJECT_NUMBER = '331777483172';
 const SERVER_URL = 'https://helloworld-331777483172.us-west1.run.app/processes';
@@ -67,12 +68,14 @@ document.addEventListener('DOMContentLoaded', () => {
   let meetingInfo = null;
   let currentGuestData = null; // Store data for the single guest
   let pollIntervalId = null; // For host polling
+  let sessionID = null;
 
   // Initialize Firebase
   const app = initializeApp(firebaseConfig);
   const analytics = getAnalytics(app);
   // Initialize Firebase Authentication and get a reference to the service
   const auth = getAuth(app);
+  const db = getDatabase(app); // Initialize Realtime Database
   const googleProvider = new GoogleAuthProvider();
   const facebookProvider = new FacebookAuthProvider();
   // TODO: Add MS Provider
@@ -360,6 +363,43 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isHost) {
       bodyElement.classList.add('host-mode');
       bodyElement.classList.remove('guest-mode'); // Ensure other mode is not active
+      // --- Firebase Realtime Database Operations for Host ---
+      const user = auth.currentUser;
+      if (user && meetingInfo) {
+        const userID = user.uid;
+        const userName = user.displayName || 'Unknown Host'; // Fallback for userName
+        sessionID = crypto.randomUUID(); // Generate UUID for session
+        const currentTime = serverTimestamp(); // Use server-side timestamp
+
+        // 1. Write to /users/userID/sessions/sessionID
+        const userSessionRef = ref(db, `users/${userID}/sessions/${sessionID}`);
+        set(userSessionRef, {
+          startTime: currentTime,
+          meetingId: meetingInfo.meetingId,
+          meetingCode: meetingInfo.meetingCode,
+          role: "interviewer"
+        }).catch(error => console.error("Firebase: Error writing user session data:", error));
+
+        // 2. Write or update /sessions/sessionID/commands
+        const sessionCommandsRef = ref(db, `sessions/${sessionID}/commands`);
+        set(sessionCommandsRef, { // Using set to ensure this object is created/overwritten
+          command: "collect",
+          time: currentTime
+        }).catch(error => console.error("Firebase: Error writing session commands data:", error));
+
+        // 3. Write to /sessions/sessionID/interviewers/userID
+        const sessionInterviewerRef = ref(db, `sessions/${sessionID}/interviewers/${userID}`);
+        set(sessionInterviewerRef, {
+          name: userName,
+          joinTime: currentTime
+        }).catch(error => console.error("Firebase: Error writing interviewer data:", error));
+
+        console.log(`Firebase: Host data written for session ${sessionID}`);
+      } else {
+        console.warn("Firebase: User not logged in or meetingInfo not available, skipping host data write.");
+      }
+      // --- End Firebase Operations ---
+
     } else {
       bodyElement.classList.add('guest-mode');
       bodyElement.classList.remove('host-mode'); // Ensure other mode is not active
@@ -407,7 +447,6 @@ document.addEventListener('DOMContentLoaded', () => {
         extensionLink.href = 'https://binp.github.io'; // TODO: Replace with Chrome Web Store link
         daemonLink.href = 'https://binp.github.io'; // TODO: Replace with Daemon download link
       }
-
     } catch (err) {
       console.error('Error starting collaboration:', err);
       displayError(`Collaboration failed: ${err.message || err}`);
@@ -432,13 +471,22 @@ document.addEventListener('DOMContentLoaded', () => {
       guestConnectionStatusDiv.textContent = `Status: Connected (Last update: ${new Date().toLocaleTimeString()})`;
       updateStatus(`Process info received (${message.payload?.length || 0}). Sending to server...`);
 
-      // TODO(binp): Figure out how to get the user name and user ID.
       // Inside Guest logic, when processes are received from extension
       const candidateInfo = message.payload.candidateInfo
-      candidateInfo.userId = 'binp000001';  // No way to get the real user ID.
-      candidateInfo.userName = 'Binbin Peng';  // No way to get the user name.
-      candidateInfo.meetingId = meetingInfo.meetingId;
-      candidateInfo.meetingCode = meetingInfo.meetingCode;
+      const currentUser = auth.currentUser;
+      if (currentUser && meetingInfo) {
+        candidateInfo.userId = currentUser.uid;
+        candidateInfo.userName = currentUser.displayName || 'Unknown Guest';
+        candidateInfo.meetingId = meetingInfo.meetingId;
+        candidateInfo.meetingCode = meetingInfo.meetingCode;
+      } else {
+        // Fallback or error handling if user or meetingInfo is not available
+        console.warn("Guest: User not logged in or meetingInfo not available for enriching candidateInfo.");
+        candidateInfo.userId = 'guest_fallback_uid'; // Provide a fallback
+        candidateInfo.userName = 'Unknown Guest';
+        candidateInfo.meetingId = meetingInfo?.meetingId || 'unknown_meeting_id';
+        candidateInfo.meetingCode = meetingInfo?.meetingCode || 'unknown_meeting_code';
+      }
 
       console.log('Send the payload to the backend server: ', candidateInfo)
       fetch(SERVER_URL, {
