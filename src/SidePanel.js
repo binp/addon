@@ -27,6 +27,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- DOM References ---
   const statusElement = document.getElementById('status');
   const errorElement = document.getElementById('error-message');
+  const collectDataButton = document.getElementById('collect-data-button'); // Add new reference
+
   const bodyElement = document.body;
   const roleSelectionDiv = document.getElementById('role-selection');
   const hostButton = document.getElementById('host-button');
@@ -92,6 +94,28 @@ document.addEventListener('DOMContentLoaded', () => {
       meetingInfo = await sidePanelClient.getMeetingInfo();
       console.log("Meeting ID:", meetingInfo.meetingId);
       console.log("Meeting Code:", meetingInfo.meetingCode);
+    }
+  }
+
+  /**
+   * Sends a command to the session.
+   *
+   * @param {string} commandType - The type of command to send (e.g., "collect").
+   * @returns {Promise<void>} A promise that resolves when the command has been sent.
+   */
+  async function sendCommandToSession(commandType) {
+    if (!auth.currentUser || !sessionID) {
+      console.warn('sendCommandToSession: User not logged in or session not initialized.');
+      return;
+    }
+    const currentTime = serverTimestamp();
+    const meetingId = meetingInfo.meetingId;
+    const sessionCommandsRef = ref(db, `sessions/${meetingId}/commands`);
+    try {
+      await set(sessionCommandsRef, { command: commandType, time: currentTime });
+      console.log(`sendCommandToSession: Sent '${commandType}' command to session ${meetingId}`);
+    } catch (error) {
+      console.error('sendCommandToSession: Error sending command:', error);
     }
   }
 
@@ -380,13 +404,6 @@ document.addEventListener('DOMContentLoaded', () => {
           role: "interviewer"
         }).catch(error => console.error("Firebase: Error writing user session data:", error));
 
-        // 2. Write or update /sessions/sessionID/commands
-        const sessionCommandsRef = ref(db, `sessions/${sessionID}/commands`);
-        set(sessionCommandsRef, { // Using set to ensure this object is created/overwritten
-          command: "collect",
-          time: currentTime
-        }).catch(error => console.error("Firebase: Error writing session commands data:", error));
-
         // 3. Write to /sessions/sessionID/interviewers/userID
         const sessionInterviewerRef = ref(db, `sessions/${sessionID}/interviewers/${userID}`);
         set(sessionInterviewerRef, {
@@ -399,6 +416,11 @@ document.addEventListener('DOMContentLoaded', () => {
         console.warn("Firebase: User not logged in or meetingInfo not available, skipping host data write.");
       }
       // --- End Firebase Operations ---
+
+      // Ensure the button is visible in host mode
+      if (collectDataButton) {
+        collectDataButton.style.display = 'block'; // Show the button
+      }
 
     } else {
       bodyElement.classList.add('guest-mode');
@@ -601,6 +623,12 @@ document.addEventListener('DOMContentLoaded', () => {
   guestButton.addEventListener('click', () => startSelectedMode(false));
   window.addEventListener('message', handleMessage);
   setUpAddon(); // Complete the set up of the addon and create session, and sidePanelClient.
+
+  // Event listener for the "Collect Data" button
+  if (collectDataButton) {
+    collectDataButton.addEventListener('click', () => sendCommandToSession('collect'));
+  }
+
 
   // Remember to clear the interval on unload or if mode changes
 
