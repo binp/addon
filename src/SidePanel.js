@@ -7,7 +7,9 @@ import { getAuth, GoogleAuthProvider, FacebookAuthProvider, signInWithPopup, onA
 import { getDatabase, onValue, ref, set, serverTimestamp } from "firebase/database";
 
 const CLOUD_PROJECT_NUMBER = '331777483172';
-const SERVER_URL = 'https://helloworld-331777483172.us-west1.run.app/processes';
+// TODO(binp): Rename to indicate this is the Cloud Function URL.
+const FIREBASE_CLOUD_FUNCTION_URL = 'https://process-guest-info-por44kzjjq-uc.a.run.app/process_guest_info';
+// const FIREBASE_CLOUD_FUNCTION_URL = 'https://us-central1-interview-proctor.cloudfunctions.net/process_guest_info';
 const MEET_Origin_URL = 'https://meet.google.com';
 
 // Your web app's Firebase configuration
@@ -298,73 +300,38 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- Function to Fetch the CandidateInfo Data from the candidate side for Host ---
-  async function fetchHostData() {
-    if (!isHost || !roleSelected || !meetingInfo?.meetingId){
-      console.warn("Host fetch skipped: Conditions not met (isHost, roleSelected, meetingId).");
-      // Optionally clear the dashboard if conditions aren't met
-      // currentGuestData = null;
-      // updateHostDashboard();
+  let hostCandidatesListenerRef = null; // Variable to store the listener for /sessions/sessionID/candidates/
+
+  function subscribeToCandidateUpdates() {
+    if (!isHost || !roleSelected || !sessionID) {
+      console.warn("Host subscribe skipped: Conditions not met (isHost, roleSelected, sessionID).");
       return;
     }
 
-    const meetingIdToFetch = meetingInfo.meetingId; // Use the meetingId obtained from the addon session
-    console.log(`Host fetching data for meetingId: ${meetingIdToFetch}...`);
-    updateStatus('Host mode fetching data...');
+    console.log(`Host subscribing to candidate updates for session: ${sessionID}`);
+    updateStatus('Host mode subscribing to candidate updates...');
 
-    // Construct the URL with the query parameter
-    const url = new URL(SERVER_URL);
-    url.searchParams.append('meetingId', meetingIdToFetch); // Use 'meetingId' as per backend handler
+    const candidatesRef = ref(db, `sessions/${sessionID}/candidates`);
 
-    try {
-        const response = await fetch(url.toString(), {
-            method: 'GET',
-            mode: 'cors',
-            cache: 'no-cache'
-        });
-
-        if (!response.ok) {
-            // Handle specific errors like 404 (meeting not found) differently?
-            // For now, treat all non-ok statuses as errors.
-            throw new Error(`HTTP error ${response.status}`);
-        }
-
-        const meetingData = await response.json(); // This should be the map { userId: CandidateInfo, ... }
-        console.log(`Host received data for meeting ${meetingIdToFetch}:`, meetingData);
-
-        // Check if the response is a valid object
-        if (typeof meetingData === 'object' && meetingData !== null) {
-          const userIds = Object.keys(meetingData);
-
-          if (userIds.length > 0) {
-              // --- Displaying the *first* guest's data ---
-              const firstUserId = userIds[0];
-              currentGuestData = meetingData[firstUserId]; // Get the CandidateInfo for the first guest
-              console.log(`Displaying data for first candidate found: ${firstUserId}`);
-
-              updateHostDashboard(); // Update UI with the first guest's data
-              updateStatus(`Host mode listening. Displaying data for ${currentGuestData.userName || firstUserId}. Last fetch: ${new Date().toLocaleTimeString()}`);
-          } else {
-              // Meeting exists, but no guests have sent data yet
-              console.log(`No guest data found for meeting ${meetingIdToFetch} yet.`);
-              currentGuestData = null; // Clear previous data if any
-              updateHostDashboard(); // Update UI to show "Waiting for guest..." state
-              updateStatus(`Host mode listening. Waiting for guest data in meeting ${meetingIdToFetch}...`);
-          }
-        } else {
-          // This case should ideally not happen if the backend sends {} for non-existent meetings
-          // or an empty map {} if the meeting exists but has no guests.
-          console.error('Received unexpected data format from server:', meetingData);
-          throw new Error('Invalid data format received from server');
-        }
-      } catch (error) {
-        console.error(`Error fetching data for meeting ${meetingIdToFetch}:`, error);
-        displayError(`Network error fetching data: ${error.message}`);
-        updateStatus('Network Error (GET)');
-        // Optionally clear the dashboard on error
-        // currentGuestData = null;
-        // updateHostDashboard();
+    // Detach previous listener if it exists
+    if (hostCandidatesListenerRef) {
+      hostCandidatesListenerRef();
+      console.log('Firebase: Detached previous host candidates listener.');
+      hostCandidatesListenerRef = null; // Clear the reference
     }
+
+    // Attach the new listener
+    hostCandidatesListenerRef = onValue(candidatesRef, (snapshot) => {
+      console.log("Firebase: Received candidate updates:", snapshot.val());
+      // TODO: Process the data from snapshot.val() and update the host dashboard
+      // For now, we are just logging it to the console.
+
+    }, (error) => {
+      console.error('Firebase: Error listening for candidate updates:', error);
+      displayError(`Error listening for candidate updates: ${error.message}`);
+    });
   }
+
 
   // --- Mode Initialization (Called AFTER role selection) ---
 
@@ -459,13 +426,9 @@ document.addEventListener('DOMContentLoaded', () => {
           })
         });
         // Inside Host logic in startSelectedMode, after setting isHost=true
-        // Inside Host logic in startSelectedMode, after setting isHost=true
         updateStatus('Host mode active. Fetching initial data...');
         updateHostDashboard();
-        // TODO(binp): We will subscribe to the Firebase realtime database.
-        // Start polling
-        fetchHostData(); // Fetch immediately
-        if (!pollIntervalId) pollIntervalId = setInterval(fetchHostData, 15000); // Fetch every 15 seconds (adjust interval as needed)
+        subscribeToCandidateUpdates(); // Start the real-time listener
       } else {
         // GUEST: Send 'addonOpened' message to the window.top.
         console.log("Guest sending 'addonOpened' message to target:", MEET_Origin_URL);
@@ -561,7 +524,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       console.log('Send the payload to the backend server: ', candidateInfo)
-      fetch(SERVER_URL, {
+      fetch(FIREBASE_CLOUD_FUNCTION_URL, {
         method: 'POST',
         mode: 'cors', // Required for cross-origin requests
         cache: 'no-cache',
@@ -685,11 +648,21 @@ document.addEventListener('DOMContentLoaded', () => {
     // Detach the command listener if it was set up
     if (commandsListenerRef) {
       try {
-        off(commandsListenerRef); // Remove the listener
+        commandsListenerRef(); // Detach the listener
         console.log('Firebase: Removed command listener for session.');
         commandsListenerRef = null; // Clear the reference
       } catch (error) {
         console.error('Firebase: Error removing command listener:', error);
+      }
+    }
+    // Detach the host candidates listener if it was set up
+    if (hostCandidatesListenerRef) {
+      try {
+        hostCandidatesListenerRef(); // Detach the listener
+        console.log('Firebase: Removed host candidates listener.');
+        hostCandidatesListenerRef = null; // Clear the reference
+      } catch (error) {
+        console.error('Firebase: Error removing host candidates listener:', error);
       }
     }
     if (app){
