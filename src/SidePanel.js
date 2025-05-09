@@ -1,13 +1,14 @@
 // SidePanel.js
 
 import { meet } from '@googleworkspace/meet-addons/meet.addons';
-import { initializeApp } from 'firebase/app';
+import { initializeApp, deleteApp } from 'firebase/app';
 import { getAnalytics } from "firebase/analytics";
 import { getAuth, GoogleAuthProvider, FacebookAuthProvider, signInWithPopup, onAuthStateChanged } from "firebase/auth";
 import { getDatabase, ref, set, serverTimestamp } from "firebase/database";
 
 const CLOUD_PROJECT_NUMBER = '331777483172';
 const SERVER_URL = 'https://helloworld-331777483172.us-west1.run.app/processes';
+const MEET_Origin_URL = 'https://meet.google.com';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -71,6 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentGuestData = null; // Store data for the single guest
   let pollIntervalId = null; // For host polling
   let sessionID = null;
+  let commandsListenerRef = null; // Variable to store the listener for /commands
 
   // Initialize Firebase
   const app = initializeApp(firebaseConfig);
@@ -365,6 +367,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- Mode Initialization (Called AFTER role selection) ---
+
+
   async function startSelectedMode(chosenIsHost) {
     if (roleSelected) {
       console.warn("Role already selected; no need to run this again.");
@@ -391,7 +395,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (user && meetingInfo) {
         const userID = user.uid;
         const userName = user.displayName || 'Unknown Host'; // Fallback for userName
-        sessionID = crypto.randomUUID(); // Generate UUID for session
+        // TODO(binp): Remove this fake sessionID which is for testing only now.
+        sessionID = "ee1e9e3d-b56f-47d1-81e6-37c1e5a69703"
+        // sessionID = crypto.randomUUID(); // Generate UUID for session
         const currentTime = serverTimestamp(); // Use server-side timestamp
 
         // 1. Write to /users/userID/sessions/sessionID
@@ -402,6 +408,8 @@ document.addEventListener('DOMContentLoaded', () => {
           meetingCode: meetingInfo.meetingCode,
           role: "interviewer"
         }).catch(error => console.error("Firebase: Error writing user session data:", error));
+
+        // 2. Write to /sessions/sessionID/commands once during the starting.
 
         // 3. Write to /sessions/sessionID/interviewers/userID
         const sessionInterviewerRef = ref(db, `sessions/${sessionID}/interviewers/${userID}`);
@@ -445,29 +453,70 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (isHost) {
         sidePanelClient.startActivity({
-          sidePanelUrl: "https://binp.github.io/addon/src/SidePanel.html"
+          sidePanelUrl: "https://binp.github.io/addon/src/SidePanel.html",
+          additionalData: JSON.stringify({
+            "sessionID": sessionID
+          })
         });
         // Inside Host logic in startSelectedMode, after setting isHost=true
         // Inside Host logic in startSelectedMode, after setting isHost=true
         updateStatus('Host mode active. Fetching initial data...');
         updateHostDashboard();
+        // TODO(binp): We will subscribe to the Firebase realtime database.
         // Start polling
         fetchHostData(); // Fetch immediately
         if (!pollIntervalId) pollIntervalId = setInterval(fetchHostData, 15000); // Fetch every 15 seconds (adjust interval as needed)
       } else {
         // GUEST: Send 'addonOpened' message to the window.top.
-         const meetOrigin = 'https://meet.google.com';
-         console.log("Guest sending 'addonOpened' message to target:", meetOrigin);
-         window.top.postMessage({ type: 'addonOpened' }, meetOrigin);
+        console.log("Guest sending 'addonOpened' message to target:", MEET_Origin_URL);
+        window.top.postMessage({ type: 'addonOpened' }, MEET_Origin_URL);
 
-         // Set initial guest status text.  
-         guestConnectionStatusDiv.textContent = 'Status: Waiting for connection from extension...';
-         updateStatus('Guest mode active.');
-
+        // Set initial guest status text.
+        guestConnectionStatusDiv.textContent = 'Status: Waiting for connection from extension...';
+        updateStatus('Guest mode active.');
         // Set placeholder links (REPLACE with actual URLs)
         extensionLink.href = 'https://binp.github.io'; // TODO: Replace with Chrome Web Store link
         daemonLink.href = 'https://binp.github.io'; // TODO: Replace with Daemon download link
+
+        // Get the sessionID from the startActivity message.
+        // const startingState = client.getActivityStartingState();
+        // const additionalData = JSON.parse(startingState.additionalData);
+        // sessionID = additionalData.sessionID
+        // TODO(binp): Remove this fake sessionID which is for testing only now.
+        sessionID = "ee1e9e3d-b56f-47d1-81e6-37c1e5a69703"
+
+        // Firebase Realtime Database Operations for Guest
+        if (sessionID) {
+          console.log(`Firebase: Setting up listener for session commands in session: ${sessionID}`);
+          const sessionCommandsRef = ref(db, `sessions/${sessionID}/commands`);
+
+          commandsListenerRef = onValue(sessionCommandsRef, (snapshot) => {
+            if (snapshot.exists()) {
+              const command = snapshot.val().command; // Get command value
+              console.log(`Firebase: Received command: ${command}`);
+              if (command === 'collect') {
+                console.log(`Firebase: Sending 'collectData' message to the extension.`);
+                // Send a message to the Chrome extension to collect data
+                window.top.postMessage({ type: 'collectNow' }, MEET_Origin_URL);
+              }
+            } else {
+              console.log(`Firebase: No data at /sessions/${sessionID}/commands`);
+            }
+          }, (error) => {
+            console.error('Firebase: Error listening for commands:', error);
+            displayError(`Error listening for commands: ${error.message}`);
+          });
+        } else {
+          console.warn("Firebase: sessionID is not available. Cannot set up the listener for commands.");
+        }
       }
+
+      if (isHost) {
+         updateStatus(`Host mode listening. Fetching initial data...`);
+      } else {
+         updateStatus(`Guest mode waiting for command...`);
+      }
+
     } catch (err) {
       console.error('Error starting collaboration:', err);
       displayError(`Collaboration failed: ${err.message || err}`);
@@ -492,11 +541,13 @@ document.addEventListener('DOMContentLoaded', () => {
       guestConnectionStatusDiv.textContent = `Status: Connected (Last update: ${new Date().toLocaleTimeString()})`;
       updateStatus(`Process info received (${message.payload?.length || 0}). Sending to server...`);
 
-      // Inside Guest logic, when processes are received from extension
-      const candidateInfo = message.payload.candidateInfo
+       // Inside Guest logic, when processes are received from extension
+       const candidateInfo = message.payload.candidateInfo
       const currentUser = auth.currentUser;
       if (currentUser && meetingInfo) {
-        candidateInfo.userId = currentUser.uid;
+        // TODO(binp): Remove this fake userId which is only for testing.
+        // candidateInfo.userId = currentUser.uid;
+        candidateInfo.userId = "99kknnViFDPkjMuW68JmSqPbLa99"
         candidateInfo.userName = currentUser.displayName || 'Unknown Guest';
         candidateInfo.meetingId = meetingInfo.meetingId;
         candidateInfo.meetingCode = meetingInfo.meetingCode;
@@ -628,11 +679,24 @@ document.addEventListener('DOMContentLoaded', () => {
     collectDataButton.addEventListener('click', () => sendCommandToSession('collect'));
   }
 
-
   // Remember to clear the interval on unload or if mode changes
-
   window.addEventListener('unload', () => {
     window.removeEventListener('message', handleMessage);
+    // Detach the command listener if it was set up
+    if (commandsListenerRef) {
+      try {
+        off(commandsListenerRef); // Remove the listener
+        console.log('Firebase: Removed command listener for session.');
+        commandsListenerRef = null; // Clear the reference
+      } catch (error) {
+        console.error('Firebase: Error removing command listener:', error);
+      }
+    }
+    if (app){
+      deleteApp(app).then(() => {
+         console.log("App deleted");
+       });
+    }
     if (pollIntervalId) clearInterval(pollIntervalId);   // Clear polling on unload
   });
 
