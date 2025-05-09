@@ -109,11 +109,10 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     const currentTime = serverTimestamp();
-    const meetingId = meetingInfo.meetingId;
-    const sessionCommandsRef = ref(db, `sessions/${meetingId}/commands`);
+    const sessionCommandsRef = ref(db, `sessions/${sessionID}/commands`);
     try {
       await set(sessionCommandsRef, { command: commandType, time: currentTime });
-      console.log(`sendCommandToSession: Sent '${commandType}' command to session ${meetingId}`);
+      console.log(`sendCommandToSession: Sent '${commandType}' command to session ${sessionID}`);
     } catch (error) {
       console.error('sendCommandToSession: Error sending command:', error);
     }
