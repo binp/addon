@@ -4,7 +4,7 @@ import { meet } from '@googleworkspace/meet-addons/meet.addons';
 import { initializeApp, deleteApp } from 'firebase/app';
 import { getAnalytics } from "firebase/analytics";
 import { getAuth, GoogleAuthProvider, FacebookAuthProvider, signInWithPopup, onAuthStateChanged } from "firebase/auth";
-import { getDatabase, ref, set, serverTimestamp } from "firebase/database";
+import { getDatabase, onValue, ref, set, serverTimestamp } from "firebase/database";
 
 const CLOUD_PROJECT_NUMBER = '331777483172';
 const SERVER_URL = 'https://helloworld-331777483172.us-west1.run.app/processes';
