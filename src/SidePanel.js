@@ -3,8 +3,10 @@
 import { meet } from '@googleworkspace/meet-addons/meet.addons';
 import { initializeApp, deleteApp } from 'firebase/app';
 import { getAnalytics } from "firebase/analytics";
-import { getAuth, GoogleAuthProvider, FacebookAuthProvider, signInWithPopup, onAuthStateChanged } from "firebase/auth";
-import { getDatabase, onValue, ref, set, serverTimestamp } from "firebase/database";
+import { getAuth, GoogleAuthProvider, FacebookAuthProvider, signInWithPopup, onAuthStateChanged, connectAuthEmulator } from "firebase/auth";
+import { getDatabase, onValue, ref, set, serverTimestamp, connectDatabaseEmulator } from "firebase/database";
+import { getFunctions, connectFunctionsEmulator } from "firebase/functions"; // If you emulate functions
+import { getStorage, connectStorageEmulator } from "firebase/storage"; // If you emulate storage
 
 const CLOUD_PROJECT_NUMBER = '331777483172';
 // TODO(binp): Rename to indicate this is the Cloud Function URL.
@@ -23,6 +25,9 @@ const firebaseConfig = {
   appId: "1:124879970402:web:80ce4ae7b862d6be7db13b",
   measurementId: "G-1SCPSVG9F2"
 };
+
+// --- Emulator Configuration ---
+const USE_EMULATORS = true; // Set to true for local testing, false for production
 
 document.addEventListener('DOMContentLoaded', () => {
   console.log('DOM Loaded. Initializing Addon with Role Selection and Timeline.');
@@ -81,10 +86,23 @@ document.addEventListener('DOMContentLoaded', () => {
   const analytics = getAnalytics(app);
   // Initialize Firebase Authentication and get a reference to the service
   const auth = getAuth(app);
-  const db = getDatabase(app); // Initialize Realtime Database
+  const db = getDatabase(app);
+  const functions = getFunctions(app); // Initialize Functions
+  const storage = getStorage(app); // Initialize Storage
   const googleProvider = new GoogleAuthProvider();
   const facebookProvider = new FacebookAuthProvider();
   // TODO: Add MS Provider
+
+  if (USE_EMULATORS) {
+    console.log("Connecting to Firebase Emulators...");
+    connectAuthEmulator(auth, "http://localhost:9099");
+    connectDatabaseEmulator(db, "localhost", 9000);
+    // For Functions, if your FIREBASE_CLOUD_FUNCTION_URL is for a callable function,
+    // you'd use connectFunctionsEmulator. If it's a direct HTTP trigger,
+    // you'd change FIREBASE_CLOUD_FUNCTION_URL to point to the local functions emulator.
+    connectFunctionsEmulator(functions, "localhost", 5001); // For callable functions
+    connectStorageEmulator(storage, "localhost", 9199);
+  }
 
   // Create the session and side panel client and hold on them.
   async function setUpAddon() {
@@ -512,7 +530,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // candidateInfo.userId = currentUser.uid;
         candidateInfo.userId = "99kknnViFDPkjMuW68JmSqPbLa99"
         candidateInfo.userName = currentUser.displayName || 'Unknown Guest';
-        candidateInfo.sessionID = sessionID;
+        candidateInfo.sessionId = sessionID;
         candidateInfo.meetingId = meetingInfo.meetingId;
         candidateInfo.meetingCode = meetingInfo.meetingCode;
       } else {
@@ -520,13 +538,17 @@ document.addEventListener('DOMContentLoaded', () => {
         console.warn("Guest: User not logged in or meetingInfo not available for enriching candidateInfo.");
         candidateInfo.userId = 'guest_fallback_uid'; // Provide a fallback
         candidateInfo.userName = 'Unknown Guest';
-        candidateInfo.sessionID = 'ee1e9e3d-b56f-47d1-81e6-37c1e5a69703';
+        candidateInfo.sessionId = 'ee1e9e3d-b56f-47d1-81e6-37c1e5a69703';
         candidateInfo.meetingId = meetingInfo?.meetingId || 'unknown_meeting_id';
         candidateInfo.meetingCode = meetingInfo?.meetingCode || 'unknown_meeting_code';
       }
 
       console.log('Send the payload to the backend server: ', candidateInfo)
-      fetch(FIREBASE_CLOUD_FUNCTION_URL, {
+      // Adjust FIREBASE_CLOUD_FUNCTION_URL if using Functions emulator for HTTP triggers
+      const functionUrl = USE_EMULATORS
+        ? `http://localhost:5001/${firebaseConfig.projectId}/us-central1/process_guest_info` // Adjust region and function name as needed
+        : FIREBASE_CLOUD_FUNCTION_URL;
+      fetch(functionUrl, {
         method: 'POST',
         mode: 'cors', // Required for cross-origin requests
         cache: 'no-cache',
