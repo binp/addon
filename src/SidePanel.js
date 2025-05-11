@@ -512,6 +512,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // candidateInfo.userId = currentUser.uid;
         candidateInfo.userId = "99kknnViFDPkjMuW68JmSqPbLa99"
         candidateInfo.userName = currentUser.displayName || 'Unknown Guest';
+        candidateInfo.sessionID = sessionID;
         candidateInfo.meetingId = meetingInfo.meetingId;
         candidateInfo.meetingCode = meetingInfo.meetingCode;
       } else {
@@ -519,6 +520,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.warn("Guest: User not logged in or meetingInfo not available for enriching candidateInfo.");
         candidateInfo.userId = 'guest_fallback_uid'; // Provide a fallback
         candidateInfo.userName = 'Unknown Guest';
+        candidateInfo.sessionID = 'ee1e9e3d-b56f-47d1-81e6-37c1e5a69703';
         candidateInfo.meetingId = meetingInfo?.meetingId || 'unknown_meeting_id';
         candidateInfo.meetingCode = meetingInfo?.meetingCode || 'unknown_meeting_code';
       }
