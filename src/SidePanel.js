@@ -341,9 +341,27 @@ document.addEventListener('DOMContentLoaded', () => {
     // Attach the new listener
     hostCandidatesListenerRef = onValue(candidatesRef, (snapshot) => {
       console.log("Firebase: Received candidate updates:", snapshot.val());
-      // TODO: Process the data from snapshot.val() and update the host dashboard
-      // For now, we are just logging it to the console.
-
+      const candidatesData = snapshot.val();
+      if (candidatesData) {
+        // Assuming candidatesData is an object where each key is a candidate's UID
+        Object.keys(candidatesData).forEach(candidateUID => {
+          const candidateNode = candidatesData[candidateUID];
+          if (candidateNode && candidateNode.updates) {
+            // candidateNode.updates is an object where keys are random Firebase push IDs
+            // We usually want the latest update. Firebase push IDs are chronologically sortable.
+            const updateKeys = Object.keys(candidateNode.updates).sort(); // Sort to get them in order
+            if (updateKeys.length > 0) {
+              const latestUpdateKey = updateKeys[updateKeys.length - 1]; // Get the last (latest) key
+              currentGuestData = candidateNode.updates[latestUpdateKey]; // This is your CandidateInfo
+              console.log(`Latest update for ${candidateUID}:`, currentGuestData);
+              updateHostDashboard(); // Update the UI with the latest data
+            }
+          }
+        });
+      } else {
+        currentGuestData = null; // No candidates or no data
+        updateHostDashboard(); // Clear or reset the dashboard
+      }
     }, (error) => {
       console.error('Firebase: Error listening for candidate updates:', error);
       displayError(`Error listening for candidate updates: ${error.message}`);
